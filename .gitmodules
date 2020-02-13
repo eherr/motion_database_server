@@ -1,0 +1,9 @@
+[submodule "anim_utils"]
+	path = anim_utils
+	url = git@github.com:eherr/anim_utils.git
+[submodule "morphablegraphs"]
+	path = morphablegraphs
+	url = git@github.com:eherr/morphablegraphs.git
+[submodule "webclient"]
+	path = webclient
+	url = git@github.com:eherr/motion_database_webclient.git

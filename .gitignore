@@ -1,0 +1,11 @@
+*.pyc
+*.pickle
+*.idea
+
+# System Files
+.DS_Store
+Thumbs.db
+
+#dbase
+/data
+/angular_dist

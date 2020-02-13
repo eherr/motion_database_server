@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MoSi Web Viewer</title>
+  <base href="/">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Montserrat|Source+Sans+Pro&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="{{ path_prefix }}assets/jquery-3.3.1.min.js"></script>
+  <script src="{{ path_prefix }}assets/Unity/Build/UnityLoader.js"></script>
+  <script src="{{ path_prefix }}assets/Unity/TemplateData/UnityProgress.js"></script>
+  <script src="https://kit.fontawesome.com/a72cf7229e.js"></script>
+  <meta name='enableEditing' content='{{ str(enable_editing) }}'>
+  <meta name='port' content='{{ app_server_port }}'>
+  <meta name='activatePortForwarding' content='{{ str(app_server_activate_port_forwarding) }}'>
+  <meta name='enableDownload' content='{{ str(app_server_enable_download) }}'>
+</head>
+<body>
+  <app-root></app-root>
+<script src="{{ path_prefix }}runtime-es2015.js" type="module"></script><script src="{{ path_prefix }}polyfills-es2015.js" type="module"></script><script src="{{ path_prefix }}runtime-es5.js" nomodule></script><script src="{{ path_prefix }}polyfills-es5.js" nomodule></script><script src="{{ path_prefix }}styles-es2015.js" type="module"></script><script src="{{ path_prefix }}styles-es5.js" nomodule></script><script src="{{ path_prefix }}vendor-es2015.js" type="module"></script><script src="{{ path_prefix }}main-es2015.js" type="module"></script><script src="{{ path_prefix }}vendor-es5.js" nomodule></script><script src="{{ path_prefix }}main-es5.js" nomodule></script></body>
+</html>
