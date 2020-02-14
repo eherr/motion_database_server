@@ -1,8 +1,15 @@
 ﻿# Motion Management Database Server
 
 The Tornado-based web server provdes a REST interface to an SQLite database for the management of skeleton animation data and statistical motion models. To visualize the motions in the database, a Unity WebGL client is provided.  
+
+ 
+![Screenshot](images/screenshot.png)
+<p align="center">
+<em>Screenshot of the web client.</em>
+
 To edit and annotate data in the database, the [motion_preprocessing_tool](https://github.com/eherr/motion_preprocessing_tool) can be used. We plan to move the motion editing functionality into the web client.
-  
+ 
+
   
 ## Setup Instructions
 
