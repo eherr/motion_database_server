@@ -707,7 +707,6 @@ class DeleteMotionHandler(BaseHandler):
                 self.write("Done")
                 return
             m_id = input_data["clip_id"]
-            has_access = self.motion_database.check_rights(input_data)
             is_processed = False
             if "is_processed" in input_data:
                 is_processed = input_data["is_processed"]
@@ -747,31 +746,6 @@ class DeleteModelHandler(BaseHandler):
                  print("Error: has no access rights")
             self.motion_database.delete_model_by_id(input_data["model_id"])
             self.write("Done")
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class DownloadMotionPrimitiveSampleHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            bvh_str = self.app.get_current_motion_primitive_sample(input_data["model_id"])
-            print("bvh_str", bvh_str)
-            # bvh_str = motion_record["BVHString"]
-            if bvh_str is not None:
-                self.write(bvh_str)
-            else:
-                self.write("Not found")
 
         except Exception as e:
             print("caught exception in get")
@@ -1436,7 +1410,6 @@ class DBApplicationServer(tornado.web.Application):
                                 (r"/download_graph", DownloadGraphHandler),
                                 (r"/remove_graph", RemoveGraphHandler),                            
                                 (r"/get_sample", GetSampleHandler),
-                                (r"/download_motion_primitive_sample", DownloadMotionPrimitiveSampleHandler),
                                 (r"/get_time_function", GetTimeFunctionHandler),
                                 (r"/start_mg_state_server", StartServerHandler),
                                 (r"/start_cluster_job", StartClusterJobHandler),
