@@ -770,19 +770,12 @@ class GetMotionListHandler(BaseHandler):
             skeleton_name = ""
             if "skeleton" in input_data:
                 skeleton_name = input_data["skeleton"]
+            collection_id = -1
             if "collection" in input_data:
-                collection = input_data["collection"]
-                is_processed = 0
-                if "is_processed" in input_data:
-                    is_processed = input_data["is_processed"]
-                if is_processed:
-                    motions = self.motion_database.get_preprocessed_data_list_by_collection(collection, skeleton_name)
-                else:
-                    motions = self.motion_database.get_motion_list_by_collection(collection, skeleton_name)
-                motions_str = json.dumps(motions)
-                self.write(motions_str)
-            if "collection_id" in input_data:
+                collection_id = input_data["collection"]
+            elif "collection_id" in input_data:
                 collection_id = input_data["collection_id"]
+            if collection_id != -1:
                 is_processed = 0
                 if "is_processed" in input_data:
                     is_processed = input_data["is_processed"]
