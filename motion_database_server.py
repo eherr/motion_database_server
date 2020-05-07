@@ -94,21 +94,7 @@ class GetMotionHandler(BaseHandler):
             data, meta_data, skeleton_type = self.motion_database.get_preprocessed_data_by_id(input_data["clip_id"])
         else:
             data, meta_data, skeleton_type = self.motion_database.get_motion_by_id(input_data["clip_id"])
-        if False:
-            result_object = bson.loads(data)
-            #result_object = motion_vector.to_unity_format()
-            result_object["skeletonModel"] = skeleton_type
-            if False:
-                poses = []
-                for i in range(len(result_object["poses"])):
-                    poses.append({"p": result_object["poses"][i]})
-
-                result_object["poses"] = poses
-            json_str = json.dumps(result_object)
-            self.write(json_str)
-        else:
-            self.write(data)
-
+        self.write(data)
         delta = time.clock()- start
         print("retrieved clip in", delta, "seconds")
 
