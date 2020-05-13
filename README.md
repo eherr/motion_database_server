@@ -3,7 +3,7 @@
 The Tornado-based web server provdes a REST interface to an SQLite database for the management of skeleton animation data and statistical motion models. To visualize the motions in the database, a Unity WebGL client is provided.  
 
  
-![Screenshot](images/screenshot.png)
+![Screenshot](doc/images/screenshot.png)
 <p align="center">
 <em>Screenshot of the web client.</em>
 
