@@ -1,0 +1,930 @@
+openapi: 3.0.0
+info:
+  title: motion
+  version: '1.0'
+servers:
+  - url: 'http://localhost:3000'
+paths:
+  /get_motion_list:
+    post:
+      summary: ''
+      operationId: post-get_motion_list
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ID:
+                      type: integer
+                    name:
+                      type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skeleton:
+                  type: string
+                collection_id:
+                  type: integer
+                is_processed:
+                  type: boolean
+      description: Returns a list of ids and names of entries in the motion or preprocessed data table given filter criteria.
+  /get_motion:
+    post:
+      summary: ''
+      operationId: post-get_motion
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  poses:
+                    type: array
+                    items:
+                      type: number
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+                is_processed:
+                  type: boolean
+        description: ''
+      description: Returns an entry in the motion or preprocessed data table in a BSON format
+  /get_graph_list:
+    post:
+      summary: ''
+      operationId: post-get_graph_list
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ID:
+                      type: integer
+                    name:
+                      type: string
+      description: 'Returns a list of ids, names of entries in the graph table with optional skeleton filter.'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skeleton:
+                  type: string
+  /get_collection_list:
+    post:
+      summary: ''
+      operationId: post-get_collection_list
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ID:
+                      type: integer
+                    name:
+                      type: string
+                    type:
+                      type: string
+                    owner:
+                      type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parent_id:
+                  type: integer
+                owner:
+                  type: string
+      description: Returns a list of ids and names of collections given parent_id and owner as filter criteria.
+  /get_skeleton_list:
+    post:
+      summary: ''
+      operationId: post-get_skeleton_list
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    ID:
+                      type: integer
+                    name:
+                      type: string
+      description: Returns a list of IDs and names of entries in the skeleton table.
+  /get_motion_info:
+    post:
+      summary: ''
+      operationId: post-get_motion_info
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  '<clip_id>':
+                    type: object
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_ids:
+                  type: array
+                  items:
+                    type: integer
+                columns:
+                  type: array
+                  items:
+                    type: string
+                is_processed:
+                  type: boolean
+      description: Returns meta data for multiple entries in the motion or preprocessed data table based on a list of clip ids and columns which are used to form the database query.
+  /get_skeleton:
+    post:
+      summary: ''
+      operationId: post-get_skeleton
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skeleton_name:
+                  type: string
+      description: Returns the data column of an entry in the skeleton table in the BSON format.
+  /get_skeleton_model:
+    post:
+      summary: ''
+      operationId: post-get_skeleton_model
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      description: Returns the meta data column of an entry in the skeleton table in the BSON format.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                skeleton_name:
+                  type: string
+  /download_bvh:
+    post:
+      summary: ''
+      operationId: post-download_bvh
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+      description: Returns a motion from the motion table in the BVH format.
+  /download_sample_as_bvh:
+    post:
+      summary: ''
+      operationId: post-download_sample_as_bvh
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+      description: Returns the motion sampled from a statistical model in the BVH format.
+  /download_motion_model:
+    post:
+      summary: ''
+      operationId: post-download_motion_model
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+        description: ''
+      description: Returns a statistical motion model in the JSON format.
+  /download_cluster_tree:
+    post:
+      summary: ''
+      operationId: post-download_cluster_tree
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+      description: Returns a cluster tree corresponding to a motion model in the JSON format.
+  /download_annotation:
+    post:
+      summary: ''
+      operationId: post-download_annotation
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+                is_processed:
+                  type: boolean
+      description: Returns the meta data of a motion in the motion table or preprocessed data table.
+  /get_collection:
+    post:
+      summary: ''
+      operationId: post-get_collection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      description: Returns an entry in the collection table in the JSON format.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+  /replace_motion:
+    post:
+      summary: ''
+      operationId: post-replace_motion
+      responses:
+        '200':
+          description: OK
+      description: Overwrites an entry in motion or preprocessed data table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+                is_processed:
+                  type: boolean
+                name:
+                  type: string
+                collection:
+                  type: integer
+                skeleton_name:
+                  type: string
+                data:
+                  type: object
+                meta_data:
+                  type: object
+                user:
+                  type: string
+                token:
+                  type: string
+  /replace_collection:
+    post:
+      summary: ''
+      operationId: post-replace_collection
+      responses:
+        '200':
+          description: OK
+      description: Overwrites an entry in the collection table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                parent:
+                  type: string
+                type:
+                  type: string
+                owner:
+                  type: integer
+                user:
+                  type: string
+                token:
+                  type: string
+        description: ''
+  /upload_motion:
+    post:
+      summary: ''
+      operationId: post-upload_motion
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                collection:
+                  type: string
+                skeleton_name:
+                  type: string
+                is_processed:
+                  type: string
+                data:
+                  type: string
+                meta_data:
+                  type: string
+                n_parts:
+                  type: integer
+                part_idx:
+                  type: integer
+                user:
+                  type: string
+                token:
+                  type: string
+        description: ''
+      description: Creates an entry in the motion or preprocessed data table.
+  /upload_bvh_clip:
+    post:
+      summary: ''
+      operationId: post-upload_bvh_clip
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                bvh_data:
+                  type: string
+                skeleton:
+                  type: string
+                collection:
+                  type: integer
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Creates an entry in the motion table from a BVH format string.
+  /delete_motion:
+    post:
+      summary: ''
+      operationId: post-delete_motion
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+                is_processed:
+                  type: boolean
+                user:
+                  type: string
+                token:
+                  type: string
+        description: ''
+      description: Delete an entry in the motion table.
+  /create_new_collection:
+    post:
+      summary: ''
+      operationId: post-create_new_collection
+      responses:
+        '200':
+          description: OK
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                parent_id:
+                  type: string
+                owner:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Creates an entry in the collection table.
+  /remove_collection:
+    post:
+      summary: ''
+      operationId: post-remove_collection
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Removes an entry in the collection table.
+  /create_new_skeleton:
+    post:
+      summary: ''
+      operationId: post-create_new_skeleton
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                '':
+                  type: string
+          application/xml:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                data:
+                  type: string
+                meta_data:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+            examples:
+              example-1: {}
+        description: ''
+      description: Creates an entry in the skeleton table.
+  /replace_skeleton:
+    post:
+      summary: ''
+      operationId: post-replace_skeleton
+      responses:
+        '200':
+          description: OK
+      description: Overwrites an entry in the skeleton table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                data:
+                  type: string
+                meta_data:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+  /upload_motion_model:
+    post:
+      summary: ''
+      operationId: post-upload_motion_model
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                collection:
+                  type: string
+                skeleton_name:
+                  type: string
+                data:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Creates an entry in the model table.
+  /delete_model:
+    post:
+      summary: ''
+      operationId: post-delete_model
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Delete an entry in the model table.
+  /remove_skeleton:
+    post:
+      summary: ''
+      operationId: post-remove_skeleton
+      responses:
+        '200':
+          description: OK
+      description: Removes an entry in the skeleton table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+  /upload_cluster_tree:
+    post:
+      summary: ''
+      operationId: post-upload_cluster_tree
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+                cluster_tree_data:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Sets the cluster tree as meta data of an entry in the model table.
+  /upload_graph:
+    post:
+      summary: ''
+      operationId: post-upload_graph
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                skeleton:
+                  type: string
+                data:
+                  type: string
+      description: Creates an entry in the graph table.
+  /replace_graph:
+    post:
+      summary: ''
+      operationId: post-replace_graph
+      responses:
+        '200':
+          description: OK
+      description: Overwrites an entry in the graph table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: integer
+                name:
+                  type: string
+                skeleton:
+                  type: string
+                data:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+        description: ''
+  /download_graph:
+    post:
+      summary: ''
+      operationId: post-download_graph
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: number
+      description: Returns an entry from the graph table in the JSON format.
+  /remove_graph:
+    post:
+      summary: ''
+      operationId: post-remove_graph
+      responses:
+        '200':
+          description: OK
+      description: Removes an entry in the skeleton table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+  /get_sample:
+    post:
+      summary: ''
+      operationId: post-get_sample
+      responses:
+        '200':
+          description: OK
+      description: Returns a motion sample from a statistical model in a BSON format.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                model_id:
+                  type: integer
+        description: ''
+  /get_time_function:
+    post:
+      summary: ''
+      operationId: post-get_time_function
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+      description: Returns a time function if it is part of the meta data of an entry in the preprocesed data table.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                clip_id:
+                  type: integer
+  /start_mg_state_server:
+    post:
+      summary: ''
+      operationId: post-start_mg_state_server
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                graph_id:
+                  type: string
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Starts the morphablegraphs state machine server with a websocket server in a new process.
+  /start_cluster_job:
+    post:
+      summary: ''
+      operationId: post-start_cluster_job
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                job_name:
+                  type: string
+                image_name:
+                  type: string
+                job_desc:
+                  type: object
+                  properties:
+                    repo_url:
+                      type: string
+                    exec_dir:
+                      type: string
+                    command:
+                      type: string
+                resources:
+                  type: object
+                  properties:
+                    n_gpus:
+                      type: number
+                    cpu:
+                      type: object
+                      properties:
+                        request:
+                          type: number
+                        lmit:
+                          type: number
+                    memory:
+                      type: object
+                      properties:
+                        request:
+                          type: number
+                        lmit:
+                          type: number
+                    storage:
+                      type: object
+                      properties:
+                        request:
+                          type: number
+                        lmit:
+                          type: number
+      description: Starts a kubernetes cluster job.
+  /get_meta_data:
+    post:
+      summary: ''
+      operationId: post-get_meta_data
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_port:
+                    type: integer
+                  activate_port_forwarding:
+                    type: boolean
+                  enable_download:
+                    type: boolean
+      description: Returns meta info on the configuration of the database server needed by the web client.
+  /authenticate:
+    post:
+      summary: ''
+      operationId: post-authenticate
+      responses:
+        '200':
+          description: OK
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+          application/xml:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: string
+                token:
+                  type: string
+      description: Checks if user and password correspond.
+components:
+  schemas: {}
