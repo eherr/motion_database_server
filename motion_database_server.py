@@ -1403,13 +1403,19 @@ class DBApplicationServer(tornado.web.Application):
         tornado.web.Application.__init__(self, request_handler_list, "", None, **settings)
         self.idCounter = 0
         self.port = port
-        self.mutex = threading.Lock()
 
     def start(self):
-        print("Start Animation Database REST interface on port", self.port, self.ssl_options)
-        asyncio.set_event_loop(asyncio.new_event_loop())
-        if self.ssl_options is not None:
-            self.listen(self.port, ssl_options=self.ssl_options)
-        else:
-            self.listen(self.port)
-        tornado.ioloop.IOLoop.instance().start()
+        try:
+            print("Start Animation Database REST interface on port", self.port, self.ssl_options)
+            asyncio.set_event_loop(asyncio.new_event_loop())
+            if self.ssl_options is not None:
+                self.listen(self.port, ssl_options=self.ssl_options)
+            else:
+                self.listen(self.port)
+            def check_keyboard_for_shutdown():
+                return
+            tornado.ioloop.PeriodicCallback(check_keyboard_for_shutdown, 1000).start()
+            tornado.ioloop.IOLoop.instance().start()
+        except KeyboardInterrupt:
+            print("Handle Keyboard Interrupt")
+            tornado.ioloop.IOLoop.instance().stop()
