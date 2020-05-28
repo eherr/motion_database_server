@@ -75,8 +75,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.write(error_string)
 
 class GetMotionHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get a motion from the database """
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -100,8 +99,7 @@ class GetMotionHandler(BaseHandler):
 
 
 class GetMotionInfoHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get columns from the motion clips table for a list of ids """
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -130,8 +128,7 @@ class GetMotionInfoHandler(BaseHandler):
 
 
 class GetSampleHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get sample from statistical model """
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -149,8 +146,7 @@ class GetSampleHandler(BaseHandler):
 
 
 class GetMetaHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get meta info to configure the unity app"""
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -165,8 +161,7 @@ class GetMetaHandler(BaseHandler):
 
 
 class AuthenticateHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Check if user and password exist"""
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -195,8 +190,7 @@ class AuthenticateHandler(BaseHandler):
         self.write(json.dumps(result_object))
 
 class GetSkeletonHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get skeletons from database"""
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -223,8 +217,7 @@ class GetSkeletonHandler(BaseHandler):
             self.write("Error")
 
 class GetSkeletonModelHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Get skeleton model from database"""
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -362,8 +355,7 @@ class DownloadBVHHandler(BaseHandler):
 
 
 class DownloadSampleHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
+    """ Convert a sample from a motion model into the BVH format """
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(
             self, application, request, **kwargs)
@@ -1302,20 +1294,6 @@ class CustomStaticFileHander(tornado.web.StaticFileHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
 
 
-class ImpressumHandler(BaseHandler):
-    """ HTTP handler to serve the impressum page
-    """
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    def get(self):
-        with open(self.app.root_path + os.sep + "impressum.html", encoding="utf-8") as in_file:
-            data = in_file.read()
-            self.write(bytes(data, 'UTF-8'))
-
-
 class IndexHandler(BaseHandler):
     """ HTTP handler to serve the main web page """
 
@@ -1405,6 +1383,7 @@ class DBApplicationServer(tornado.web.Application):
         self.port = port
 
     def start(self):
+        """ src: https://stackoverflow.com/questions/5375220/how-do-i-stop-tornado-web-server"""
         try:
             print("Start Animation Database REST interface on port", self.port, self.ssl_options)
             asyncio.set_event_loop(asyncio.new_event_loop())
