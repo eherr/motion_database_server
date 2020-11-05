@@ -3,7 +3,7 @@
 The Tornado-based web server provdes a REST interface to an SQLite database for the management of skeleton animation data and statistical motion models. To visualize the motions in the database, a Unity WebGL client is provided.  
 
  
-![Screenshot](doc/images/screenshot.png)
+![Screenshot](images/screenshot.png)
 <p align="center">
 <em>Screenshot of the web client.</em>
 
@@ -20,37 +20,42 @@ To edit and annotate data in the database, the [motion_preprocessing_tool](https
 git clone --recursive git@github.com:eherr/motion_database_server.git
 ```
 
-3. Install the dependencies
+3. Install the base package for [animation data editing](https://github.com/eherr/anim_utils).
+```bat
+pip install git+https://github.com/eherr/anim_utils/
+```
+
+4. Install other dependencies
 ```bat
 pip install -r requirements.txt
 ```
 
-4. Create a new empty database: 
+5. Create a new empty database: 
 ```bat
 python create_database.py
 ```
 
-5. Add a first user for remote database editing: 
+6. Add a first user for remote database editing: 
 ```bat
 python create_user.py root password admin none
 ```
 
-6. Add a first skeleton using an example BVH file: 
+7. Add a first skeleton using an example BVH file: 
 ```bat
 python import_skeleton.py skeleton_name bvh_filename
 ```
 
-7. Import BVH files from a directory specifying the previously imported skeleton:
+8. Import BVH files from a directory specifying the previously imported skeleton:
 ```bat
 python import_bvh_from_directory.py skeleton_name directory_path
 ```
 
-8. Start the web server: 
+9. Start the web server: 
 ```bat
 python run_motion_db_server_standalone.py
 ```
 
-9. Build the web client using angular: 
+10. Build the web client using angular: 
 ```bat
 cd webclient 
 ng build
