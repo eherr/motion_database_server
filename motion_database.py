@@ -25,7 +25,7 @@ import json
 import bson
 import numpy as np
 import pandas as pd
-from db_utils import DataBaseConnection
+from user_database import UserDatabase
 from anim_utils.animation_data.bvh import BVHReader, BVHWriter
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from anim_utils.animation_data.motion_vector import MotionVector
@@ -33,6 +33,34 @@ from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiv
 from morphablegraphs.utilities import convert_to_mgrd_skeleton
 import hashlib
 import jwt
+JWT_ALGORITHM = 'HS256'
+
+def convert_to_small_dict(motion_dict):
+    small_dict = dict()
+    small_dict["joint_sequence"] = motion_dict["jointSequence"]
+    small_dict["poses"]  = []
+    small_dict["frame_time"] = motion_dict["frameTime"]
+    axes = [0,1,2]
+    use_q = True
+    for f in motion_dict["frames"]:
+        p = f["rootTranslation"]
+        pose = [p["x"], p["y"], p["z"]]
+        for q in f["rotations"]:
+            if use_q:
+                for k in ["w", "x", "y", "z"]:
+                    pose.append(q[k])
+            else:
+                _q = []
+                for k in ["w", "x", "y", "z"]:
+                    _q.append(q[k])
+                _q = normalize(_q)
+                axis, angle = quaternion_to_axis_angle(_q)
+                exp = axis * angle
+                for i in axes:
+                    pose.append(exp[i])
+        small_dict["poses"].append(pose)
+        
+    return small_dict
 
 
 def get_bvh_string(skeleton, frames):
@@ -45,7 +73,7 @@ def get_bvh_string(skeleton, frames):
 
 def get_bvh_from_str(bvh_str):
     bvh_reader = BVHReader("")
-    lines = bvh_str.split("\\n")
+    lines = bvh_str.split('\\n')
     lines = [l for l in lines if len(l) > 0]
     bvh_reader.process_lines(lines)
     return bvh_reader
@@ -54,52 +82,20 @@ INT_T = "INTERGER"
 BLOB_T = "BLOB"
 TEXT_T = "TEXT"
 
-LEGACY_TABLES = dict()
-LEGACY_TABLES["collections"] = [("name",TEXT_T),
+TABLES = dict()
+TABLES["collections"] = [("name",TEXT_T),
                     ("type",TEXT_T), 
-                    ("owner",TEXT_T), 
+                    ("owner",INT_T), 
                     ("parent",INT_T)]
-LEGACY_TABLES["skeletons"] = [("name",TEXT_T),
+TABLES["skeletons"] = [("name",TEXT_T),
                     ("data",BLOB_T), 
-                    ("metaData",BLOB_T)]
-LEGACY_TABLES["motion_clips"] = [("name",TEXT_T),
+                    ("metaData",BLOB_T),
+                    ("owner",INT_T)]
+TABLES["motion_clips"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeletonType",INT_T), 
                     ("quaternionFrames",TEXT_T), 
                     ("metaInfo",TEXT_T)]
-LEGACY_TABLES["models"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T)]
-LEGACY_TABLES["graphs"] = [("name",TEXT_T),
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T)]
-
-
-TABLES = dict()
-TABLES["collections"] = [("name",TEXT_T),
-                    ("type",TEXT_T), 
-                    ("owner",TEXT_T), 
-                    ("parent",INT_T)]
-TABLES["skeletons"] = [("name",TEXT_T),
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T)]
-TABLES["motion_clips"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T), 
-                    ("subject",TEXT_T), 
-                    ("source",TEXT_T), 
-                    ("numFrames",INT_T),
-                    ("public",INT_T)]
-TABLES["preprocessed_data"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T), 
-                    ("source",TEXT_T)]
 TABLES["models"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
@@ -108,14 +104,53 @@ TABLES["models"] = [("name",TEXT_T),
 TABLES["graphs"] = [("name",TEXT_T),
                     ("skeleton",INT_T), 
                     ("data",BLOB_T)]
-TABLES["users"] = [("name",TEXT_T),
+
+
+TABLES2 = dict()
+TABLES2["collections"] = [("name",TEXT_T),
+                    ("type",TEXT_T), 
+                    ("owner",TEXT_T), 
+                    ("parent",INT_T), 
+                    ("public",INT_T)]
+TABLES2["skeletons"] = [("name",TEXT_T),
+                    ("data",BLOB_T), 
+                    ("metaData",BLOB_T), 
+                    ("owner",INT_T)]
+TABLES2["motion_clips"] = [("name",TEXT_T),
+                    ("collection",INT_T), 
+                    ("skeleton",INT_T), 
+                    ("data",BLOB_T), 
+                    ("metaData",BLOB_T), 
+                    ("subject",TEXT_T), 
+                    ("source",TEXT_T), 
+                    ("numFrames",INT_T), 
+                    ("public",INT_T)]
+TABLES2["preprocessed_data"] = [("name",TEXT_T),
+                    ("collection",INT_T), 
+                    ("skeleton",INT_T), 
+                    ("data",BLOB_T), 
+                    ("metaData",BLOB_T), 
+                    ("source",TEXT_T)]
+TABLES2["models"] = [("name",TEXT_T),
+                    ("collection",INT_T), 
+                    ("skeleton",INT_T), 
+                    ("data",BLOB_T), 
+                    ("metaData",BLOB_T)]
+TABLES2["graphs"] = [("name",TEXT_T),
+                    ("skeleton",INT_T), 
+                    ("data",BLOB_T)]
+TABLES2["users"] = [("name",TEXT_T),
                     ("password",TEXT_T), 
                     ("role",TEXT_T), 
-                    ("userGroup",TEXT_T)]
+                    ("sharedAccessGroups",TEXT_T), 
+                    ("email",TEXT_T)]
+TABLES2["user_groups"] = [("name",TEXT_T), # need to be unique
+                    ("owner",INT_T),     # user id
+                     ("users",TEXT_T)]   #  list of user ids 
+
                     
-class MotionDatabase(DataBaseConnection):
-    def __init__(self, server_secret=None):
-        self.table_descs = TABLES
+class MotionDatabase(UserDatabase):
+    def __init__(self, server_secret=None, data_dir="data"):
         self.collections_table = "collections"
         self.skeleton_table = "skeletons"
         self.motion_table = "motion_clips"
@@ -123,25 +158,30 @@ class MotionDatabase(DataBaseConnection):
         self.model_table = "models"
         self.graph_table = "graphs"
         self.user_table = "users"
+        self.groups_table = "user_groups"
+        self.character_dir = data_dir + os.sep +"characters"
         self.existing_collections = []
         self.upload_buffer = dict()
         self.skeletons = dict()
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
-        self.server_secret = server_secret
+        self.jwt = jwt.JWT()
+        if server_secret is not None:
+            self.server_secret = jwt.jwk.OctetJWK(bytes(server_secret, "utf-8"))
+        else:
+            self.server_secret = None
         self.enforce_access_rights = server_secret is not None
-        print("set server secret", self.server_secret, self.enforce_access_rights)
     
     def connect(self, path):
         self.connect_to_database(path)
-        for skel_id, skel_name in self.get_skeleton_list():
+        for skel_id, skel_name, owner in self.get_skeleton_list():
             print("add", skel_name)
             self.skeletons[skel_name] = self.load_skeleton(skel_name)
 
     def create_database(self, path):
         self.connect_to_database(path)
-        for t_name in self.table_descs:
-            self.create_table(t_name, self.table_descs[t_name], replace=True)
+        for t_name in TABLES2:
+            self.create_table(t_name, TABLES2[t_name], replace=True)
         print("created database",path)
 
     def init_database(self, path, recreate=False):
@@ -153,7 +193,7 @@ class MotionDatabase(DataBaseConnection):
 
     def init_skeleton_table(self, path, name="skeletons"):
         self.connect_to_database(path)
-        self.create_table(name, self.table_descs[name], replace=True)
+        self.create_table(name, TABLES2[name], replace=True)
         
     def export_collection(self, path_str, skeleton_name, out_dir):
         paths = path_str.split("/")
@@ -209,6 +249,22 @@ class MotionDatabase(DataBaseConnection):
             filename += ".bvh"
         with open(filename, "wt") as out_file:
             out_file.write(bvh_str)
+        
+    def import_database(self, other):
+        skeletons = other.get_skeleton_list()
+        for skeleton_id, skeleton_name in skeletons:
+            skeleton_name = skeleton_name
+            print("ad",skeleton_name)
+            self.import_skeleton(other, skeleton_name)
+            self.import_collection_data_from_src(other,skeleton_name)
+        self.import_graphs(other)
+
+    def import_skeletons(self, other):
+        skeletons = other.get_skeleton_list()
+        for skeleton_id, skeleton_name in skeletons:
+            skeleton_name = skeleton_name
+            print("ad",skeleton_name)
+            self.import_skeleton(other, skeleton_name)
 
     def import_graphs(self, other):
         graphs = other.get_graph_list()
@@ -238,18 +294,100 @@ class MotionDatabase(DataBaseConnection):
                 print("Could not load skeleton model", e.args)
         return skeleton
 
-    def get_collection_list_by_id(self, parent_id, owner=-1):
+    def import_skeleton(self,other, skeleton_name):
+        skeleton = other.load_skeleton_legacy(skeleton_name)
+        if skeleton is None:
+            return
+
+        skeleton_format = skeleton.to_unity_format()
+        skeleton_format = bson.dumps(skeleton_format)
+        skeleton_model = bson.dumps(json.loads(skeleton.skeleton_model))
+        records = [[skeleton_name, skeleton_format, skeleton_model]]
+        self.insert_records(self.skeleton_table, ["name", "data","metaData"], records)
+
+    def import_collection_data_from_src(self, other, skeleton_name, parent=0):
+        collections = other.parse_collection(skeleton_name, parent)
+        for col in collections:
+            
+            col_id, col_name, col_type, owner, public = col
+            if col_id not in self.existing_collections:
+                self.existing_collections.append(col_id)
+                records = [[col_id, col_name, col_type,owner,parent, public]]
+                self.insert_records(self.collections_table,["ID","name", "type","owner","parent", "public"], records )
+
+            self.import_collection_data(skeleton_name, col_id, col_name, collections[col], parent)
+
+            self.import_collection_data_from_src(other, skeleton_name, col_id)
+        return
+        
+    
+    def import_collection_data(self, skeleton_name, col_id, col_name, collection_data,parent):
+
+        m_records = []
+        for m_id, m_data in collection_data["motions"].items():
+            motion_dict =  json.loads(m_data["data"])
+            small_dict = convert_to_small_dict(motion_dict)
+            data = bson.dumps(small_dict)
+            meta_data = b'\x00'
+            if m_data["meta_data"] is not None and m_data["meta_data"] != "" :
+                meta_data = bson.dumps(json.loads(m_data["meta_data"]))
+            m_records.append([ m_data["name"], skeleton_name, col_id, data, meta_data, m_data["subject"], m_data["timestamp"]])
+        if len(m_records) > 0:
+            self.insert_records(self.motion_table, ["name", "skeleton", "collection","data", "metaData", "subject", "timestamp"], m_records)
+            print("inserted motions", len(m_records), col_name)
+        else:
+
+            print("no motion records", col_name, len(collection_data["motions"]))
+
+        m_records = []
+        for m_id, m_data in collection_data["preprocessed"].items():
+            motion_dict = json.loads(m_data["data"])
+            small_dict = convert_to_small_dict(motion_dict)
+            data = bson.dumps(small_dict)
+            if m_data["meta_data"] is not None and m_data["meta_data"] != "" :
+                meta_data = json.loads(m_data["meta_data"])
+            else:
+                meta_data = dict()
+            meta_data["time_function"] = m_data["time_func"]
+            meta_data = bson.dumps(meta_data)
+            m_records.append([ m_data["name"],skeleton_name, col_id, data, meta_data])
+        if len(m_records) > 0:
+            self.insert_records(self.preprocessed_table, ["name", "skeleton","collection","data","metaData"], m_records)
+            print("inserted preprocessed data", len(m_records), col_name)
+        else:
+            print("no preprocessing records", col_name)
+
+
+        m_records = []
+        for m_id, m_data in collection_data["models"].items():
+            data = bson.dumps(json.loads(m_data["data"]))
+            cluster_tree_data = b'\x00'
+            if m_data["cluster_tree_data"] is not None and m_data["cluster_tree_data"] != "" :
+                cluster_tree_data = bson.dumps(json.loads(m_data["cluster_tree_data"]))
+            m_records.append([ m_id, m_data["name"],skeleton_name, col_id, data, cluster_tree_data])
+        if len(m_records) > 0:
+            self.insert_records(self.model_table, ["ID","name", "skeleton","collection","data","metaData"], m_records)
+            print("inserted models", len(m_records), col_name)
+        else:
+            print("no records", col_name)
+
+        return
+    
+    def get_collection_list_by_id(self, parent_id, owner=-1, public=-1):
         filter_conditions =  [("parent",parent_id)]
+        intersection_list = []
         if owner >= 0:
-            filter_conditions.append(("owner",owner))
-        collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner"],filter_conditions)
+            intersection_list.append(("owner",owner))
+        if public >= 0:
+            intersection_list.append(("public",public))
+        collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
         return collection_records
 
     def parse_collection(self, skeleton_name, parent=0):
         collections = dict()
         for col in self.get_collection_list_by_id(parent):
-            col_id, col_name, col_type, owner = col
-            print("export",  col_id, col_name, col_type)
+            col_id, col_name, col_type, owner, public = col
+            print("export",  col_id, col_name, col_type, public)
             m_data = self.get_data_in_collection(col_id, skeleton_name, is_aligned=0)
             collections[col] = m_data
         return collections
@@ -337,14 +475,16 @@ class MotionDatabase(DataBaseConnection):
             data["metaData"] = meta_data
         self.update_entry(self.motion_table, data, "ID", m_id)
 
-    def add_new_skeleton(self, name, data=b"x00", meta_data=b"x00"):
+    def add_new_skeleton(self, name, data=b"x00", meta_data=b"x00", owner=1):
         skeleton_list = self.get_name_list(self.skeleton_table)
         if name != "" and name not in skeleton_list.values:
-            records = [(name, data, meta_data)]
-            self.insert_records(self.skeleton_table, ["name", "data", "metaData"], records)
+            records = [(name, data, meta_data, owner)]
+            self.insert_records(self.skeleton_table, ["name", "data", "metaData", "owner"], records)
             self.skeletons[name] = self.load_skeleton(name)
+            return True
         else:
             print("Error: skeleton already exists")
+            return False
 
     def replace_skeleton(self, name, skeleton_data=b"x00", meta_data=b"x00"):
         print("replace skeleton", name)
@@ -417,7 +557,9 @@ class MotionDatabase(DataBaseConnection):
             data["type"] = input_data["type"]
         if "owner" in input_data:
             data["owner"] = input_data["owner"]
-        self.update_entry(self.collections_table, input_data, "id", collection_id)
+        if "public" in input_data:
+            data["public"] = input_data["public"]
+        self.update_entry(self.collections_table, data, "id", collection_id)
     
     def get_skeleton_by_name(self, name):
         records = self.query_table(self.skeleton_table,[ "data", "metaData"], [("name", name)])
@@ -487,7 +629,7 @@ class MotionDatabase(DataBaseConnection):
         return self.delete_entry_by_id(self.graph_table, graph_id)
 
     def get_skeleton_list(self):
-        r = self.query_table(self.skeleton_table, ["ID","name"], [])
+        r = self.query_table(self.skeleton_table, ["ID","name", "owner"], [])
         return r
 
 
@@ -503,7 +645,6 @@ class MotionDatabase(DataBaseConnection):
             data = self.get_data_from_buffer(name)
             data = json.loads(data)
             n_frames = 0
-            public = 0
             if "poses" in data:
                 n_frames = len(data["poses"])
             data = bson.dumps(data)
@@ -511,28 +652,38 @@ class MotionDatabase(DataBaseConnection):
             if is_processed:
                 return self.insert_preprocessed_data(collection, skeleton_name, name, data, meta_data)
             else:
-                return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames, public)
+                return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames)
 
-    def upload_bvh_clip(self, collection, skeleton_name, name, bvh_str):
+    def load_motion_vector_from_bvh_str(self, bvh_str):
         bvh_reader = get_bvh_from_str(bvh_str)
         animated_joints = list(bvh_reader.get_animated_joints())
         motion_vector = MotionVector()
         motion_vector.from_bvh_reader(bvh_reader, False)
         motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
+        return motion_vector
+
+    def load_skeleton_from_bvh_str(self, bvh_str):
+        bvh_reader = get_bvh_from_str(bvh_str)
+        animated_joints = list(bvh_reader.get_animated_joints())
+        skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
+        return skeleton
+
+    def upload_bvh_clip(self, collection, skeleton_name, name, bvh_str):
+        motion_vector = self.load_motion_vector_from_bvh_str(bvh_str)
         data = motion_vector.to_db_format()
         n_frames = len(data["poses"])
         data = bson.dumps(data)
         m_records = []
         row = (name, skeleton_name, collection, data, n_frames)
         m_records.append(row)
-        motion_vector.export(motion_vector.skeleton, "out_mv.bvh")
+        #motion_vector.export(motion_vector.skeleton, "out_mv.bvh")
         self.insert_records(self.motion_table, ["name", "skeleton","collection","data","numFrames"], m_records)
             
-    def insert_motion(self, collection, skeleton_name, name, data, meta_data, n_frames, public):
+    def insert_motion(self, collection, skeleton_name, name, data, meta_data, n_frames):
         m_records = []
-        row = (name, skeleton_name, collection, data, meta_data, n_frames, public)
+        row = (name, skeleton_name, collection, data, meta_data, n_frames)
         m_records.append(row)
-        self.insert_records(self.motion_table, ["name", "skeleton","collection","data","metaData", "numFrames", "public"], m_records)
+        self.insert_records(self.motion_table, ["name", "skeleton","collection","data","metaData", "numFrames"], m_records)
 
     def insert_preprocessed_data(self, collection, skeleton_name, name, data, meta_data):
         m_records = []
@@ -559,10 +710,10 @@ class MotionDatabase(DataBaseConnection):
         data = b_data
         return data
 
-    def add_new_collection_by_id(self, name, collection_type, parent_id, owner=0):
+    def add_new_collection_by_id(self, name, collection_type, parent_id, owner, public=0):
         owner = max(0, owner)
-        records = [(name, collection_type, parent_id, owner)]
-        self.insert_records(self.collections_table, ["name", "type", "parent", "owner"], records)
+        records = [(name, collection_type, parent_id, owner, public)]
+        self.insert_records(self.collections_table, ["name", "type", "parent", "owner", "public"], records)
         records = self.get_max_id(self.collections_table)
         new_id = -1
         if len(records) > 0:
@@ -596,25 +747,25 @@ class MotionDatabase(DataBaseConnection):
         self.delete_entry_by_id(self.model_table, m_id)
 
     def get_motion_primitive_sample(self, model_id):
-            mv = None
-            if model_id not in self._mp_buffer:
-                data, cluster_tree_data, skeleton_name = self.get_model_by_id(model_id)
-                data = bson.loads(data)
-                self._mp_buffer[model_id] = MotionPrimitiveModelWrapper()
-                mgrd_skeleton = convert_to_mgrd_skeleton(self.skeletons[skeleton_name])
-                self._mp_buffer[model_id]._initialize_from_json(mgrd_skeleton, data)
-                self._mp_skeleton_type[model_id] = skeleton_name
-            if self._mp_buffer[model_id] is not None:
-                skeleton_name = self._mp_skeleton_type[model_id]
-                mv = self._mp_buffer[model_id].sample(False).get_motion_vector()
-                # mv = self._mp_buffer[action_name].skeleton.add_fixed_joint_parameters_to_motion(mv)
-                animated_joints = self._mp_buffer[model_id].get_animated_joints()
-                new_quat_frames = np.zeros((len(mv), self.skeletons[skeleton_name].reference_frame_length))
-                for idx, reduced_frame in enumerate(mv):
-                    new_quat_frames[idx] = self.skeletons[skeleton_name].add_fixed_joint_parameters_to_other_frame(reduced_frame,
-                                                                                                animated_joints)
-                mv = new_quat_frames
-            return mv
+        mv = None
+        if model_id not in self._mp_buffer:
+            data, cluster_tree_data, skeleton_name = self.get_model_by_id(model_id)
+            data = bson.loads(data)
+            self._mp_buffer[model_id] = MotionPrimitiveModelWrapper()
+            mgrd_skeleton = convert_to_mgrd_skeleton(self.skeletons[skeleton_name])
+            self._mp_buffer[model_id]._initialize_from_json(mgrd_skeleton, data)
+            self._mp_skeleton_type[model_id] = skeleton_name
+        if self._mp_buffer[model_id] is not None:
+            skeleton_name = self._mp_skeleton_type[model_id]
+            mv = self._mp_buffer[model_id].sample(False).get_motion_vector()
+            # mv = self._mp_buffer[action_name].skeleton.add_fixed_joint_parameters_to_motion(mv)
+            animated_joints = self._mp_buffer[model_id].get_animated_joints()
+            new_quat_frames = np.zeros((len(mv), self.skeletons[skeleton_name].reference_frame_length))
+            for idx, reduced_frame in enumerate(mv):
+                new_quat_frames[idx] = self.skeletons[skeleton_name].add_fixed_joint_parameters_to_other_frame(reduced_frame,
+                                                                                            animated_joints)
+            mv = new_quat_frames
+        return mv
 
 
     def get_motion_vector_from_random_sample(self, model_id):
@@ -696,45 +847,83 @@ class MotionDatabase(DataBaseConnection):
             print("Error in get_model_by_id_legacy")
         return data, cluster_tree_data, skeleton_name
 
-    def authenticate_user(self, user, password):
-        success = False
-        m = hashlib.sha256()
-        m.update(bytes(password,"utf-8"))
-        password = m.digest()
-        filter_conditions = [("name",user)]
-        print(user, password)
-        r = self.query_table(self.user_table, ["password"], filter_conditions)
-        if  len(r) >0:
-            success = r[0][0] == password
-        return success
-
-    def generate_token(self, payload):
-        if self.server_secret is not None:  
-            return jwt.encode(payload, self.server_secret, algorithm='HS256').decode("utf-8")
-        else:
-            return ""
-    
-    def create_user(self, user, password, role, group):
-        m = hashlib.sha256()
-        m.update(bytes(password,"utf-8"))
-        password = m.digest()
-        records = [[user, password, role, group]]
-        self.insert_records(self.user_table, ["name", "password", "role","userGroup"], records)
-
-    def remove_user(self, name):
-        self.delete_entry_by_name(self.user_table,name)
-
     def check_rights(self, session):
         if self.enforce_access_rights and "user" in session and "token" in session:
-            token = bytes(session["token"], "utf-8")
-            payload = jwt.decode(token, self.server_secret, algorithm='HS256')
-            print("decoded", payload)
-            if "user" in payload:
-                return payload["user"] == session["user"]
+            token = session["token"]
+            payload = self.jwt.decode(token, self.server_secret)
+            if "user_name" in payload:
+                return payload["user_name"] == session["user"]
             else:
                 return False
         else:
             print(session.keys())
             return not self.enforce_access_rights
+    
+    def store_character_model(self, name, skeleton_type, data):
+        if name[-4:] == ".glb":
+            name = name[:-4]
+        out_dir = self.character_dir + os.sep + skeleton_type 
+        if not os.path.isdir(out_dir):
+            os.makedirs(out_dir)
+        out_filename = out_dir+ os.sep + name + ".glb"
+        with open(out_filename, 'wb') as f:
+            f.write(data)
+        return True
+    
+    def delete_character_model(self, name, skeleton_type):
+        if name[-4:] == ".glb":
+            name = name[:-4]
+        filename = self.character_dir + os.sep + skeleton_type + os.sep + name + ".glb"
+        if os.path.isfile(filename):
+            os.remove(filename)
+        return True
 
-        
+    def get_character_model_list(self, skeleton_type):
+        path_ = self.character_dir + os.sep + skeleton_type
+        file_list = []
+        if os.path.isdir(path_):
+            file_list = [f for f in os.listdir(path_) if f.endswith('.glb')]
+        print("model data", skeleton_type, file_list)
+        return file_list
+    
+    def get_character_model_data(self, name, skeleton_type):
+        if name[-4:] == ".glb":
+            name = name[:-4]
+        in_filename = self.character_dir + os.sep + skeleton_type + os.sep + name + ".glb"
+        data = None
+        if os.path.isfile(in_filename):
+            with open(in_filename, 'rb') as f:
+                data = f.read()
+        else:
+            print(in_filename,"is not a file")
+        return data
+
+    def get_owner_of_collection(self, collection_id):
+        owner = None
+        r = self.query_table(self.collections_table, ["owner"], [("ID", collection_id)])
+        if len(r) > 0:
+            owner = r[0][0]
+        return owner
+
+    def get_owner_of_motion(self, motion_id):
+        owner = None
+        r = self.query_table(self.motion_table, ["collection"], [("ID", motion_id)])
+        if len(r) > 0:
+            collection_id = r[0][0]
+            owner = self.get_owner_of_collection(collection_id)
+        return owner    
+    
+    def get_owner_of_model(self, model_id):
+        owner = None
+        r = self.query_table(self.model_table, ["collection"], [("ID", model_id)])
+        if len(r) > 0:
+            collection_id = r[0][0]
+            owner = self.get_owner_of_collection(collection_id)
+        return owner
+
+    def get_owner_of_skeleton(self, skeleton_name):
+        owner = None
+        r = self.query_table(self.skeleton_table, ["owner"], [("name", skeleton_name)])
+        if len(r) > 0:
+            owner = r[0][0]
+        return owner

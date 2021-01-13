@@ -9,7 +9,6 @@ httplib2>=0.10.3
 pytest>=3.4.2
 scikit_learn==0.18.2
 pandas>=0.23.3
-pyjwt
+jwt
 transformations
-kubernetes
-bson
+rstr

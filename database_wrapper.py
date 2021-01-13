@@ -29,36 +29,12 @@ http://stackoverflow.com/questions/36028759/how-to-open-and-convert-sqlite-datab
 http://stackoverflow.com/questions/23574614/appending-pandas-dataframe-to-sqlite-table-by-primary-key
 http://www.sqlitetutorial.net/sqlite-python/delete/
 """
+import io
 import sqlite3
 import pandas as pd
-import numpy as np
-import io
-
-def adapt_array(arr):
-    """
-    http://stackoverflow.com/a/31312102/190597 (SoulNibbler)
-    """
-    out = io.BytesIO()
-    np.save(out, arr)
-    out.seek(0)
-    return sqlite3.Binary(out.read())
 
 
-def convert_array(text):
-    out = io.BytesIO(text)
-    out.seek(0)
-    return np.load(out)
-
-
-# Converts np.array to TEXT when inserting
-sqlite3.register_adapter(np.ndarray, adapt_array)
-
-# Converts TEXT to np.array when selecting
-sqlite3.register_converter("array", convert_array)
-
-
-                    
-class DataBaseConnection(object):
+class DatabaseWrapper(object):
     def __init__(self):
         self.con = None
 
@@ -69,7 +45,6 @@ class DataBaseConnection(object):
     def create_table(self,table_name, columns, replace=False):
         if replace:
             self.con.execute(''' DROP TABLE IF EXISTS '''+table_name+''';''')
-
         col_string = ''' (ID INTEGER PRIMARY KEY, '''
         for c_name, c_type in columns:
             col_string += "'"+c_name+"' "+c_type+"," 
@@ -91,13 +66,9 @@ class DataBaseConnection(object):
         self.con.close()
         print("closed connection to db")
 
-    def read_pd(self, table_name):  # <DATABASENAME>
+    def read_pd(self, table_name):
         print("read pandas data from sql table", table_name)
         query_str = "SELECT * From " + table_name
-        # query = self.con.execute(query_str)
-        # cols = [column[0] for column in query.description]
-        # print cols
-        # results = pd.DataFrame.from_records(data=query.fetchall(), columns=cols)
         results = pd.read_sql_query(query_str, self.con)
         return results
         
@@ -115,8 +86,6 @@ class DataBaseConnection(object):
         query_str +=  ''' WHERE '''+ condition_key +'''= ?;'''
         values.append(condition_value)
         cur = self.con.cursor()
-        #print(query_str)
-        #print(values)
         cur.execute(query_str, tuple(values))
         self.con.commit()
 
@@ -181,7 +150,20 @@ class DataBaseConnection(object):
         query_str += ";"
         return pd.read_sql_query(query_str, self.con)
 
-    def query_table(self, table_name, column_list, filter_list=None):
+    def get_filter_str(self, c):
+        query_str = ""
+        if type(c[1]) == str:
+            query_str = c[0]+" = '"+c[1]+"'"
+        elif type(c[1]) == list:
+            list_str = "".join([str(v)+", " for v in c[1][:-1]])
+            list_str = "(" + list_str
+            list_str +=  str(c[1][-1]) + ")"
+            query_str = c[0]+" IN " + list_str
+        else:
+            query_str = c[0]+" = "+str(c[1])
+        return query_str
+
+    def query_table(self, table_name, column_list, filter_list=None, intersection_list=None):
         query_str = "SELECT "
         last_idx = len(column_list)-1
         for idx, c in enumerate(column_list):
@@ -191,20 +173,24 @@ class DataBaseConnection(object):
             else:
                 query_str += " "  
         query_str += "FROM  " + table_name
-        if filter_list is not None and len(filter_list) >0:
+        has_filter_list = filter_list is not None and len(filter_list) > 0
+        has_intersection_list = intersection_list is not None and len(intersection_list) > 0
+        if has_filter_list or has_intersection_list:
             query_str += " WHERE "
+        if has_filter_list:
             for idx, c in enumerate(filter_list):
                 if idx > 0:
                     query_str += " AND "
-                if type(c[1]) == str:
-                    query_str += c[0]+" = '"+c[1]+"'"
-                elif type(c[1]) == list:
-                    list_str = "".join([str(v)+", " for v in c[1][:-1]])
-                    list_str = "(" + list_str
-                    list_str +=  str(c[1][-1]) + ")"
-                    query_str += c[0]+" IN " + list_str
-                else:
-                    query_str += c[0]+" = "+str(c[1])
+                query_str += self.get_filter_str(c)
+        if has_intersection_list:
+            if has_filter_list:
+                query_str += " AND ("
+            for idx, c in enumerate(intersection_list):
+                if idx > 0:
+                    query_str += " OR "
+                query_str += self.get_filter_str(c)
+            if has_filter_list:
+                query_str += ")"
         query_str += ";"
         records = pd.read_sql_query(query_str, self.con)
         results = []
@@ -215,14 +201,13 @@ class DataBaseConnection(object):
             results.append(tuple(record))
         return results
 
-
     def delete_entry_by_id(self, table_name, motion_id):
         query_str = "DELETE FROM " + table_name + \
                     " WHERE ID="+ str(motion_id) + ";"
         print(query_str)
         self.con.execute(query_str)
         self.con.commit()
-
+    
     def delete_entry_by_name(self, table_name, name):
         query_str = "DELETE FROM " + table_name + \
                     " WHERE name='"+ str(name) + "';"
@@ -234,4 +219,3 @@ class DataBaseConnection(object):
         query_str = "SELECT name  FROM " + table_name +" ;"
         results = pd.read_sql_query(query_str, self.con)
         return results
-

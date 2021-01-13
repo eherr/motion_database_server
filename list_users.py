@@ -20,27 +20,21 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database import MotionDatabase, TABLES2
+
+from mocap_server.motion_database import MotionDatabase, TABLES2
 from anim_utils.utilities.io_helper_functions import load_json_file
 import argparse
 
-def create_user(path, name, pw, role):
+def list_users(path):
     con = MotionDatabase()
     con.connect(path)
-    email = ""
-    groups = "[]"
-    con.create_user(name, pw, email, role, groups)
+    user_list = con.get_user_list()
+    print(user_list)
 
 CONFIG_FILE = "db_server_config.json"
 
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
-    parser = argparse.ArgumentParser(description='Create db user.')
-    parser.add_argument('name', nargs='?', help='user name')
-    parser.add_argument('pw', nargs='?', help='password')
-    parser.add_argument('role', nargs='?', help='role')
-    args = parser.parse_args()
-    if  args.name is not None and args.pw is not None and args.role is not None and "db_path" in config:
-        db_path = config["db_path"]
-        create_user(db_path,  args.name, args.pw,  args.role)
+    db_path = config["db_path"]
+    list_users(db_path)
 
