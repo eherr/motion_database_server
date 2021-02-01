@@ -680,13 +680,10 @@ class DeleteMotionHandler(BaseHandler):
                 if "is_processed" in input_data:
                     is_processed = input_data["is_processed"]
                 print("delete",m_id, is_processed)
-                if has_access:
-                    if is_processed:
-                        self.motion_database.delete_preprocessed_data(m_id)
-                    else:
-                        self.motion_database.delete_motion_by_id(m_id)
+                if is_processed:
+                    self.motion_database.delete_preprocessed_data(m_id)
                 else:
-                    print("no access rights")
+                    self.motion_database.delete_motion_by_id(m_id)
             self.write("Done")
 
         except Exception as e:
