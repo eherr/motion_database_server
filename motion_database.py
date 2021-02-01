@@ -371,7 +371,17 @@ class MotionDatabase(UserDatabase):
         else:
             print("no records", col_name)
 
-        return
+    def get_collection_by_name(self, name, parent=-1, owner=-1, public=-1, exact_match=False):
+        filter_conditions =  [("name",name, exact_match)]
+        intersection_list = None
+        if parent >= 0:
+            filter_conditions.append(("parent",parent, True))
+        if owner >= 0:
+            filter_conditions.append(("owner",owner, True))
+        if public >= 0:
+            filter_conditions.append(("public",public, True))
+        collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
+        return collection_records
     
     def get_collection_list_by_id(self, parent_id, owner=-1, public=-1):
         filter_conditions =  [("parent",parent_id)]
@@ -573,6 +583,13 @@ class MotionDatabase(UserDatabase):
 
     def get_motion_list_by_collection(self, collection, skeleton=""):
         filter_conditions =[("collection",str(collection))]
+        if skeleton != "":
+            filter_conditions+=[("skeleton", skeleton)]
+        r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
+        return r
+
+    def get_motion_list_by_name(self, name, skeleton="", exact_match=False):
+        filter_conditions =[("name", name, exact_match)]
         if skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
         r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)

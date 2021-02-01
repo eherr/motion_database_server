@@ -1431,7 +1431,7 @@ class UploadCharacterModelHandler(BaseHandler):
             self.finish()
 
 
-class DeleteCharacterModel(BaseHandler):
+class DeleteCharacterModelHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -1453,7 +1453,7 @@ class DeleteCharacterModel(BaseHandler):
         finally:
             self.finish()
 
-class DownloadCharacterModel(BaseHandler):
+class DownloadCharacterModelHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -1479,7 +1479,7 @@ class DownloadCharacterModel(BaseHandler):
         finally:
             self.finish()
 
-class GetCharacterModelList(BaseHandler):
+class GetCharacterModelListHandler(BaseHandler):
     """Handles HTTP POST Requests to a registered server url."""
 
     def __init__(self, application, request, **kwargs):
@@ -1503,6 +1503,74 @@ class GetCharacterModelList(BaseHandler):
             raise
         finally:
             self.finish()
+
+class GetCollectionsByNameHandler(BaseHandler):
+    """Handles HTTP POST Requests to a registered server url."""
+
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(
+            self, application, request, **kwargs)
+        self.app = application
+        self.motion_database = application.motion_database
+
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            print("get collection", input_str)
+            input_data = json.loads(input_str)
+            if "name" in input_data:
+                name = input_data["name"]
+                exact_match = input_data.get("exact_match", False)
+                collection = self.motion_database.get_collection_by_name(name, exact_match=exact_match)
+                collection_str = ""
+                if collection is not None:
+                    collection_str = json.dumps(collection)
+                self.write(collection_str)
+            else:
+                self.write("Missing name parameter")
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+class GetMotionListByNameHandler(BaseHandler):
+    """Handles HTTP POST Requests to a registered server url."""
+
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(
+            self, application, request, **kwargs)
+        self.app = application
+        self.motion_database = application.motion_database
+
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            print("get motion list", input_str)
+            input_data = json.loads(input_str)
+            if "name" in input_data:
+                name = input_data["name"]
+                skeleton = input_data.get("skeleton", "")
+                exact_match = input_data.get("exact_match", False)
+                collection = self.motion_database.get_motion_list_by_name(name, skeleton, exact_match)
+                collection_str = ""
+                if collection is not None:
+                    collection_str = json.dumps(collection)
+                self.write(collection_str)
+            else:
+                self.write("Missing name parameter")
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
 
 
 MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
@@ -1544,7 +1612,9 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/start_cluster_job", StartClusterJobHandler),
                             (r"/get_meta_data", GetMetaHandler),
                             (r"/authenticate", AuthenticateHandler),
-                            (r"/get_character_model_list", GetCharacterModelList),
+                            (r"/get_character_model_list", GetCharacterModelListHandler),
                             (r"/upload_character_model", UploadCharacterModelHandler),
-                            (r"/delete_character_model", DeleteCharacterModel),
-                            (r"/download_character_model", DownloadCharacterModel)]
+                            (r"/delete_character_model", DeleteCharacterModelHandler),
+                            (r"/download_character_model", DownloadCharacterModelHandler),
+                            (r"/get_collections_by_name", GetCollectionsByNameHandler),
+                            (r"/get_motion_list_by_name", GetMotionListByNameHandler)]

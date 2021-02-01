@@ -153,7 +153,10 @@ class DatabaseWrapper(object):
     def get_filter_str(self, c):
         query_str = ""
         if type(c[1]) == str:
-            query_str = c[0]+" = '"+c[1]+"'"
+            if len(c) > 2 and not c[2]: # allow partial match
+                query_str = c[0]+" LIKE '%"+c[1]+"%'"
+            else:
+                query_str = c[0]+" = '"+c[1]+"'"
         elif type(c[1]) == list:
             list_str = "".join([str(v)+", " for v in c[1][:-1]])
             list_str = "(" + list_str
