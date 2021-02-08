@@ -23,6 +23,8 @@
 import os
 import json
 import bson
+import bz2
+import base64
 import numpy as np
 import pandas as pd
 from user_database import UserDatabase
@@ -114,17 +116,14 @@ TABLES2["collections"] = [("name",TEXT_T),
                     ("public",INT_T)]
 TABLES2["skeletons"] = [("name",TEXT_T),
                     ("data",BLOB_T), 
-                    ("metaData",BLOB_T), 
-                    ("owner",INT_T)]
+                    ("metaData",BLOB_T)]
 TABLES2["motion_clips"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",BLOB_T), 
                     ("metaData",BLOB_T), 
                     ("subject",TEXT_T), 
-                    ("source",TEXT_T), 
-                    ("numFrames",INT_T), 
-                    ("public",INT_T)]
+                    ("source",TEXT_T)]
 TABLES2["preprocessed_data"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
@@ -239,6 +238,7 @@ class MotionDatabase(UserDatabase):
         data, skeleton, meta_data = self.get_motion_by_id(motion_id)
         if data is None:
             return
+        data = bz2.decompress(data)
         motion_dict = bson.loads(data)
         print("write to file")
         motion_vector = MotionVector()
@@ -281,6 +281,7 @@ class MotionDatabase(UserDatabase):
     def load_skeleton(self, skeleton_name):
         data, skeleton_model = self.get_skeleton_by_name(skeleton_name)
         if data is not None:
+            data = bz2.decompress(data)
             data = bson.loads(data)
             add_extra_end_site=False
             print("load default", len(data["referencePose"]["rotations"]))
@@ -288,6 +289,7 @@ class MotionDatabase(UserDatabase):
         
         if skeleton_model is not None:
             try:
+                skeleton_model = bz2.decompress(skeleton_model)
                 skeleton_model = bson.loads(skeleton_model)
                 skeleton.skeleton_model = skeleton_model
             except Exception as e:
@@ -650,26 +652,32 @@ class MotionDatabase(UserDatabase):
         return r
 
 
-    def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, data, meta_data, is_processed=False):
+    def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, base64_data_str, meta_data, is_processed=False):
         print("upload motion", name)
         if name not in self.upload_buffer:
             upload_state = dict()
             upload_state["parts"] = dict()
             upload_state["n_parts"] = n_parts
             self.upload_buffer[name] = upload_state
-        self.upload_buffer[name]["parts"][part_idx] = data
+        self.upload_buffer[name]["parts"][part_idx] = base64_data_str
         if self.buffer_is_complete(name):
-            data = self.get_data_from_buffer(name)
-            data = json.loads(data)
-            n_frames = 0
-            if "poses" in data:
-                n_frames = len(data["poses"])
-            data = bson.dumps(data)
-            del self.upload_buffer[name]
-            if is_processed:
-                return self.insert_preprocessed_data(collection, skeleton_name, name, data, meta_data)
-            else:
-                return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames)
+            self._insert_motion_from_buffer_to_db(name, collection, skeleton_name, meta_data, is_processed)
+
+    def _insert_motion_from_buffer_to_db(self, name, collection, skeleton_name, meta_data, is_processed):
+        base64_data_str = self.get_data_from_buffer(name)
+        data = base64.decodebytes(base64_data_str.encode('utf-8'))
+        data = bz2.decompress(data)
+        data = bson.loads(data)
+        n_frames = 0
+        if "poses" in data:
+            n_frames = len(data["poses"])
+        data = bson.dumps(data)
+        data = bz2.compress(data)
+        del self.upload_buffer[name]
+        if is_processed:
+            return self.insert_preprocessed_data(collection, skeleton_name, name, data, meta_data)
+        else:
+            return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames)
 
     def load_motion_vector_from_bvh_str(self, bvh_str):
         bvh_reader = get_bvh_from_str(bvh_str)
@@ -690,6 +698,7 @@ class MotionDatabase(UserDatabase):
         data = motion_vector.to_db_format()
         n_frames = len(data["poses"])
         data = bson.dumps(data)
+        data = bz2.compress(data)
         m_records = []
         row = (name, skeleton_name, collection, data, n_frames)
         m_records.append(row)
@@ -767,6 +776,7 @@ class MotionDatabase(UserDatabase):
         mv = None
         if model_id not in self._mp_buffer:
             data, cluster_tree_data, skeleton_name = self.get_model_by_id(model_id)
+            data = bz2.decompress(data)
             data = bson.loads(data)
             self._mp_buffer[model_id] = MotionPrimitiveModelWrapper()
             mgrd_skeleton = convert_to_mgrd_skeleton(self.skeletons[skeleton_name])

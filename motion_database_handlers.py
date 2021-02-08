@@ -57,20 +57,8 @@ class GetMotionHandler(BaseHandler):
             data, meta_data, skeleton_type = self.motion_database.get_preprocessed_data_by_id(input_data["clip_id"])
         else:
             data, meta_data, skeleton_type = self.motion_database.get_motion_by_id(input_data["clip_id"])
-        if False:
-            result_object = bson.loads(data)
-            #result_object = motion_vector.to_unity_format()
-            result_object["skeletonModel"] = skeleton_type
-            if False:
-                poses = []
-                for i in range(len(result_object["poses"])):
-                    poses.append({"p": result_object["poses"][i]})
-
-                result_object["poses"] = poses
-            json_str = json.dumps(result_object)
-            self.write(json_str)
-        else:
-            self.write(data)
+        
+        self.write(data)
 
         delta = time.clock()- start
         print("retrieved clip in", delta, "seconds")
@@ -323,6 +311,7 @@ class DownloadBVHHandler(BaseHandler):
           
             # bvh_str = motion_record["BVHString"]
             if data is not None:
+                data = bz2.decompress(data)
                 data = bson.loads(data)
                 motion_vector = MotionVector()
                 motion_vector.from_custom_db_format(data)
@@ -383,9 +372,7 @@ class DownloadMotionModelHandler(BaseHandler):
             input_data = json.loads(input_str)
             data, cluster_tree_data, skeleton_name = self.motion_database.get_model_by_id(input_data["model_id"])
             if data is not None:
-                model = bson.loads(data)
-                model_str = json.dumps(model)
-                self.write(model_str)
+                self.write(data)
             else:
                 self.write("")
 
@@ -409,12 +396,10 @@ class DownloadClusterTreeHandler(BaseHandler):
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             data, cluster_tree_data, skeleton_name = self.motion_database.get_model_by_id(input_data["model_id"])
+            result_str = ""
             if cluster_tree_data is not None and cluster_tree_data != b'\x00':
-                cluster_tree_data = bson.loads(cluster_tree_data)
-                cluster_tree_str = json.dumps(cluster_tree_data)
-                self.write(cluster_tree_str)
-            else:
-                self.write("")
+                result_str = cluster_tree_data
+            self.write(result_str)
 
         except Exception as e:
             print("caught exception in get")
@@ -446,6 +431,7 @@ class DownloadAnnotationHandler(BaseHandler):
 
             if meta_data is not None and meta_data != b"x00" and meta_data != "":
                 try:
+                    meta_data = bz2.decompress(meta_data)
                     meta_data = bson.loads(meta_data)
                     annotation_str = json.dumps(meta_data)
                     self.write(annotation_str)
@@ -479,6 +465,7 @@ class GetTimeFunctionHandler(BaseHandler):
             m_id = input_data["clip_id"]
             data, meta_data, skeleton_name = self.motion_database.get_preprocessed_data_by_id(m_id)
             if meta_data is not None and meta_data != b"x00" and meta_data != "":
+                meta_data = bz2.decompress(meta_data)
                 meta_data = bson.loads(meta_data)
                 if "time_function" in meta_data:
                     time_function_str = json.dumps(meta_data["time_function"])
@@ -534,6 +521,8 @@ class UploadMotionHandler(BaseHandler):
             print("upload motion", is_processed, input_data["is_processed"])
             if meta_data!= b"x00":
                 meta_data = bson.dumps(meta_data)
+            data = input_data["data"]
+            #data = base64.decodebytes(data.encode('utf-8'))
             res_str = self.motion_database.upload_motion(part_idx, n_parts, collection,
                                                 input_data["skeleton_name"],
                                                 input_data["name"],
@@ -944,7 +933,7 @@ class GetCollectionHandler(BaseHandler):
     def post(self):
         try:
             input_str = self.request.body.decode("utf-8")
-            print("get collecton", input_str)
+            print("get collection", input_str)
             input_data = json.loads(input_str)
             if "id" in input_data:
                 collection_id = input_data["id"]
@@ -1278,7 +1267,8 @@ class DownloadGraphHandler(BaseHandler):
                 graph_id = input_data["id"]
                 records = self.motion_database.get_graph_by_id(graph_id)
                 if len(records) > 0:
-                    result = bson.loads(records[0][1])
+                    data = bz2.decompress(records[0][1])
+                    result = bson.loads(data)
                     result = json.dumps(result)
             if result is not None:
                 self.write(result)
