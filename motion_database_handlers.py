@@ -150,10 +150,10 @@ class AuthenticateHandler(BaseHandler):
             print("missing required fields")
         
         result_object = dict()
-        result_object["username"] = input_data["username"]
         result_object["user_id"] = user_id
         if user_id > -1:
             print("aunticated user", user_id)
+            result_object["username"] = input_data["username"]
             playload = {"user_id": user_id, "username": input_data["username"]}
             result_object["token"] = self.app.motion_database.generate_token(playload)
             result_object["role"] = self.app.motion_database.get_user_role(user_id)
