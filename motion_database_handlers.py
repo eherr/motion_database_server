@@ -48,7 +48,7 @@ class GetMotionHandler(BaseHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
         print("get motion",input_str)
-        start = time.clock()
+        start = time.time()
         input_data = json.loads(input_str)
         is_processed = False
         if "is_processed" in input_data:
@@ -60,7 +60,7 @@ class GetMotionHandler(BaseHandler):
         
         self.write(data)
 
-        delta = time.clock()- start
+        delta = time.time()- start
         print("retrieved clip in", delta, "seconds")
 
 
@@ -75,7 +75,7 @@ class GetMotionInfoHandler(BaseHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
         print("get motion info",input_str)
-        start = time.clock()
+        start = time.time()
         input_data = json.loads(input_str)
         is_processed = False
         columns = []
@@ -90,7 +90,7 @@ class GetMotionInfoHandler(BaseHandler):
             data = self.motion_database.get_motion_info(columns, clip_ids, is_processed)
             json_str = json.dumps(data)
             self.write(json_str)
-        delta = time.clock()- start
+        delta = time.time()- start
         print("processed query in", delta, "seconds")
 
 
