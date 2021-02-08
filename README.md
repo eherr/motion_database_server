@@ -13,7 +13,7 @@ To edit and annotate data in the database, the [motion_preprocessing_tool](https
   
 ## Setup Instructions
 
-1. Install Python 3.5 in a virtual environment.
+1. Install Python 3.6 or above in a virtual environment.
 
 2. Clone the repository with all submodules. The mgrd submodule of morphablegraphs is optional and can be ignored.
 ```bat
