@@ -142,19 +142,19 @@ class AuthenticateHandler(BaseHandler):
         input_str = self.request.body.decode("utf-8")
         input_data = json.loads(input_str)
         user_id = -1
-        if "name" in input_data and "password" in input_data:
-            user = input_data["name"]
+        if "username" in input_data and "password" in input_data:
+            user = input_data["username"]
             password = input_data["password"]
             user_id = self.motion_database.authenticate_user(user, password)
         else:
             print("missing required fields")
         
         result_object = dict()
-        result_object["username"] = input_data["name"]
+        result_object["username"] = input_data["username"]
         result_object["user_id"] = user_id
         if user_id > -1:
             print("aunticated user", user_id)
-            playload = {"user_id": user_id, "user_name": input_data["name"]}
+            playload = {"user_id": user_id, "username": input_data["username"]}
             result_object["token"] = self.app.motion_database.generate_token(playload)
             result_object["role"] = self.app.motion_database.get_user_role(user_id)
         else:
