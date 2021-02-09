@@ -303,7 +303,9 @@ class MotionDatabase(UserDatabase):
 
         skeleton_format = skeleton.to_unity_format()
         skeleton_format = bson.dumps(skeleton_format)
+        skeleton_format = bz2.compress(skeleton_format)
         skeleton_model = bson.dumps(json.loads(skeleton.skeleton_model))
+        skeleton_model = bz2.compress(skeleton_model)
         records = [[skeleton_name, skeleton_format, skeleton_model]]
         self.insert_records(self.skeleton_table, ["name", "data","metaData"], records)
 
@@ -637,7 +639,7 @@ class MotionDatabase(UserDatabase):
         if "skeleton" in input_data:
             data["skeleton"] = input_data["skeleton"]
         if "data" in input_data:
-            data["data"] = bson.dumps(input_data["data"])
+            data["data"] = bz2.compress(bson.dumps(input_data["data"]))
         self.update_entry(self.graph_table, data, "id", graph_id)
 
     def get_graph_by_id(self, graph_id):

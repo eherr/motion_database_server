@@ -25,6 +25,7 @@ import time
 import numpy as np
 import json
 import bson
+import bz2
 import threading
 import subprocess
 from multiprocessing import Process
@@ -232,6 +233,7 @@ class UploadMotionModelHandler(BaseHandler):
             print("upload motion primitive model")
             if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
                 mm_data_str = bson.dumps(input_data["data"])
+                mm_data_str = bz2.compress(mm_data_str)
                 data = dict()
                 data["id"] = self.motion_database.upload_motion_model(input_data["name"],
                                                         input_data["collection"], 
@@ -270,6 +272,7 @@ class UploadClusterTreeHandler(BaseHandler):
             print("upload cluster tree")
             if "model_id" in input_data and "cluster_tree_data" in input_data:
                 cluster_tree_data_str = bson.dumps(json.loads(input_data["cluster_tree_data"]))
+                cluster_tree_data_str = bz2.compress(cluster_tree_data_str)
                 self.motion_database.upload_cluster_tree(input_data["model_id"],
                                                         cluster_tree_data_str)
             else:
@@ -1048,12 +1051,15 @@ class NewSkeletonHandler(BaseHandler):
                     if "data_type" in input_data and input_data["data_type"] == "bvh":
                         skeleton = self.motion_database.load_skeleton_from_bvh_str(input_data["data"])
                         data = bson.dumps(skeleton.to_unity_format(animated_joints=skeleton.animated_joints))
+                        data = bz2.compress(data)
                     else:
                         data = bson.dumps(json.loads(input_data["data"]))
+                        data = bz2.compress(data)
                     
                     meta_data = b"x00"
                     if "meta_data" in input_data:
                         meta_data = bson.dumps(json.loads(input_data["meta_data"]))
+                        meta_data = bz2.compress(meta_data)
                     if data is not None:
                         success = self.motion_database.add_new_skeleton(input_data["name"], data, meta_data, request_user_id)
                 else:
@@ -1096,8 +1102,10 @@ class ReplaceSkeletonHandler(BaseHandler):
                     if "data" in input_data:
                         data = json.loads(input_data["data"])
                         data = bson.dumps(data)
+                        data = bz2.compress(data)
                     if "meta_data" in input_data:
                         meta_data = bson.dumps(json.loads(input_data["meta_data"]))
+                        meta_data = bz2.compress(meta_data)
                     if data != b"x00" or meta_data != b"x00":
                         self.motion_database.replace_skeleton(skeleton_name, data, meta_data)
                         success = True
@@ -1206,6 +1214,7 @@ class UploadGraphHandler(BaseHandler):
                 name = input_data["name"]
                 skeleton = input_data["skeleton"]
                 data = bson.dumps(input_data["data"])
+                data = bz2.compress(data)
                 result_id = self.motion_database.add_new_graph(name, skeleton, data)
             if result_id is not None:
                 result_data = {"id": result_id}
@@ -1240,6 +1249,7 @@ class ReplaceGraphHandler(BaseHandler):
                 return
             if "id" in input_data:
                 graph_id = input_data["id"]
+                data = bz2.compress(data)
                 self.motion_database.replace_graph(graph_id, input_data)
             self.write("Done")
 
