@@ -10,4 +10,5 @@ scikit_learn
 pandas==0.23.3
 jwt
 transformations
-rstrbson==0.5.9
+rstr
+bson==0.5.9

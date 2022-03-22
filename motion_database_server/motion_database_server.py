@@ -22,27 +22,16 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import os
-import time
-import numpy as np
 import json
-import bson
 import threading
-import mimetypes
-import subprocess
 from multiprocessing import Process
 import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
-import tornado.template as template
-import asyncio
 import requests
-from motion_database_server.motion_database import MotionDatabase, get_bvh_string
-from anim_utils.animation_data import BVHReader, SkeletonBuilder, MotionVector, BVHWriter
-from anim_utils.animation_data.skeleton_models import SKELETON_MODELS
-from anim_utils.retargeting.analytical import retarget_from_src_to_target
-from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiveModelWrapper
-from motion_database_server.kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
+from motion_database_server.motion_database import MotionDatabase
+from motion_database_server.kubernetes_interface import load_kube_config
 from motion_database_server.motion_database_handlers import BaseHandler, MOTION_DB_HANDLER_LIST
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 
@@ -77,15 +66,17 @@ class IndexHandler(BaseHandler):
 class DBApplicationServer(tornado.web.Application):
     """ Wrapper for the MotionDatabase class that starts the Tornado Webserver
     """
-    def __init__(self, root_path, db_path, port, enable_editing=True, enable_download=True, 
-                activate_port_forwarding=False, ssl_options=None, server_secret=None, kube_config=None):
-        self.root_path = root_path
-        self.db_path = db_path
+    def __init__(self, **kwargs):
+        self.port = kwargs.get("port", 8888)
+        self.root_path = kwargs.get("root_path", r"./public")
+        self.db_path = kwargs.get("db_path", r"./motion.db")
+        server_secret = kwargs.get("server_secret", None)
         self.motion_database = MotionDatabase(server_secret)
         self.motion_database.connect(self.db_path)
-        self.activate_port_forwarding = activate_port_forwarding
-        self.enable_download = enable_download
-        self.ssl_options = ssl_options
+        self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
+        self.enable_download = kwargs.get("enable_download", False)
+        self.ssl_options = kwargs.get("ssl_options", None)
+        kube_config = kwargs.get("kube_config", None)
         if kube_config is not None:
             load_kube_config(kube_config["config_file"])
             self.k8s_namespace = kube_config["namespace"]
@@ -99,13 +90,13 @@ class DBApplicationServer(tornado.web.Application):
         settings = dict(template_path=template_path)
         tornado.web.Application.__init__(self, request_handler_list, "", None, **settings)
         self.server_registry = dict()
-        self.activate_user_authentification = True
+        self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
         self.idCounter = 0
-        self.port = port
         self.mutex = threading.Lock()
 
     def start(self):
         print("Start Animation Database REST interface on port", self.port, self.ssl_options)
+        print("activate_port_forwarding", self.activate_port_forwarding)
         #asyncio.set_event_loop(asyncio.new_event_loop())
         try:
             if self.ssl_options is not None:
