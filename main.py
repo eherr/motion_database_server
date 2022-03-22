@@ -20,42 +20,19 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import os
-import time
-import json
-from motion_database_server import DBApplicationServer
-
-def load_json_file(file_path):
-    if os.path.isfile(file_path):
-        with open(file_path, "r") as in_file:
-            return json.load(in_file)
+from motion_database_server.motion_database_server import DBApplicationServer
+from motion_database_server.utils import load_json_file
 
 
 def main(config):
-    port=8888
-    if "port" in config:
-        port = config["port"]
-    db_path = r"./motion.db"
-    if "db_path" in config:
-        db_path = config["db_path"]
-    root_path = r"./public"
-    if "root_path" in config:
-        root_path = config["root_path"]
-    enable_editing = False
-    if "enable_editing" in config:
-        enable_editing = config["enable_editing"]
-    enable_download = False
-    if "enable_download" in config:
-        enable_download = config["enable_download"]
-    activate_port_forwarding = False
-    if "activate_port_forwarding" in config:
-        activate_port_forwarding = config["activate_port_forwarding"]
-    ssl_options = None
-    if "ssl_options" in config and type(config["ssl_options"]) == dict:
-        ssl_options = config["ssl_options"]
-    server_secret = None
-    if "server_secret" in config:
-        server_secret = config["server_secret"]
+    port = config.get("port", 8888)
+    db_path = config.get("db_path", r"./motion.db")
+    root_path = config.get("root_path", r"./public")
+    enable_editing = config.get("enable_editing", False)
+    enable_download = config.get("enable_download", False)
+    activate_port_forwarding = config.get("activate_port_forwarding", False)
+    ssl_options = config.get("ssl_options", None)
+    server_secret = config.get("server_secret", None)
     print("activate_port_forwarding", activate_port_forwarding)
     server = DBApplicationServer(root_path, db_path, port, enable_editing=enable_editing,enable_download=enable_download,activate_port_forwarding=activate_port_forwarding, ssl_options=ssl_options, server_secret=server_secret)
     

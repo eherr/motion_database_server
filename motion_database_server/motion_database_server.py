@@ -37,14 +37,14 @@ import tornado.web
 import tornado.template as template
 import asyncio
 import requests
-from motion_database import MotionDatabase, get_bvh_string
+from motion_database_server.motion_database import MotionDatabase, get_bvh_string
 from anim_utils.animation_data import BVHReader, SkeletonBuilder, MotionVector, BVHWriter
 from anim_utils.animation_data.skeleton_models import SKELETON_MODELS
 from anim_utils.retargeting.analytical import retarget_from_src_to_target
 from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiveModelWrapper
-from kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
-from motion_database_handlers import BaseHandler, MOTION_DB_HANDLER_LIST
-from user_database_handlers import USER_DB_HANDLER_LIST
+from motion_database_server.kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
+from motion_database_server.motion_database_handlers import BaseHandler, MOTION_DB_HANDLER_LIST
+from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 
 
 class CustomStaticFileHander(tornado.web.StaticFileHandler):

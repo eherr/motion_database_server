@@ -30,10 +30,10 @@ import threading
 import subprocess
 from multiprocessing import Process
 import tornado.web
-from motion_database import  get_bvh_string
+from motion_database_server.motion_database import  get_bvh_string
 from anim_utils.animation_data import BVHReader, MotionVector, BVHWriter
-from kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
-from base_handler import BaseHandler
+from motion_database_server.kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
+from motion_database_server.base_handler import BaseHandler
 
 DEFAULT_SKELETON = "custom"
 USER_ROLE_ADMIN = "admin"

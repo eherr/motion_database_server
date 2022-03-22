@@ -20,8 +20,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database import MotionDatabase
-from utils import load_json_file
+from motion_database_server.motion_database import MotionDatabase
+from motion_database_server.utils import load_json_file
 
 
 CONFIG_FILE = "db_server_config.json"

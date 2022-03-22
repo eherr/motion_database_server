@@ -27,7 +27,7 @@ import bz2
 import base64
 import numpy as np
 import pandas as pd
-from user_database import UserDatabase
+from motion_database_server.user_database import UserDatabase
 from anim_utils.animation_data.bvh import BVHReader, BVHWriter
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from anim_utils.animation_data.motion_vector import MotionVector
