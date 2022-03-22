@@ -21,7 +21,8 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 from motion_database import MotionDatabase
-from anim_utils.utilities.io_helper_functions import load_json_file
+from utils import load_json_file
+
 
 CONFIG_FILE = "db_server_config.json"
 if __name__ == "__main__":

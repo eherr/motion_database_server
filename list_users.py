@@ -22,7 +22,7 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 from mocap_server.motion_database import MotionDatabase, TABLES2
-from anim_utils.utilities.io_helper_functions import load_json_file
+from utils import load_json_file
 import argparse
 
 def list_users(path):
