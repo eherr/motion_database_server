@@ -524,6 +524,7 @@ class UploadMotionHandler(BaseHandler):
             print("upload motion", is_processed, input_data["is_processed"])
             if meta_data!= b"x00":
                 meta_data = bson.dumps(meta_data)
+                meta_data = bz2.compress(meta_data)
             data = input_data["data"]
             #data = base64.decodebytes(data.encode('utf-8'))
             res_str = self.motion_database.upload_motion(part_idx, n_parts, collection,
@@ -606,7 +607,9 @@ class ReplaceMotionHandler(BaseHandler):
             meta_data = None
             if "meta_data" in input_data:
                 try:
-                    meta_data = bson.dumps(json.loads(input_data["meta_data"]))
+                    meta_data = json.loads(input_data["meta_data"])
+                    meta_data = bson.dumps(meta_data)
+                    meta_data = bz2.compress(meta_data)
                 except:
                     print("Warning: could not read meta data")
                     meta_data = None
@@ -618,6 +621,7 @@ class ReplaceMotionHandler(BaseHandler):
                 skeleton_name = input_data["skeleton_name"]
             if "data" in input_data:
                 motion_data = bson.dumps(input_data["data"])
+                motion_data = bz2.compress(motion_data)
             if is_processed:
                 result_str = self.motion_database.replace_preprocessed_data(input_data["motion_id"],
                                                                 collection,
