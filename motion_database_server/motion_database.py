@@ -80,6 +80,16 @@ def get_bvh_from_str(bvh_str):
     bvh_reader.process_lines(lines)
     return bvh_reader
 
+
+def extract_compressed_bson(data):
+    try:
+        data = bson.loads(bz2.decompress(data))
+    except:
+        data = bson.loads(data)
+        print("Warning: data was not compressed")
+        pass
+    return data
+
 INT_T = "INTERGER"
 BLOB_T = "BLOB"
 TEXT_T = "TEXT"
@@ -238,8 +248,7 @@ class MotionDatabase(UserDatabase):
         data, skeleton, meta_data = self.get_motion_by_id(motion_id)
         if data is None:
             return
-        data = bz2.decompress(data)
-        motion_dict = bson.loads(data)
+        motion_dict = extract_compressed_bson(data)
         print("write to file")
         motion_vector = MotionVector()
         motion_vector.from_custom_unity_format(motion_dict)
@@ -281,11 +290,9 @@ class MotionDatabase(UserDatabase):
     def load_skeleton(self, skeleton_name):
         data, skeleton_model = self.get_skeleton_by_name(skeleton_name)
         if data is not None:
-            data = bz2.decompress(data)
-            data = bson.loads(data)
-            add_extra_end_site=False
-            print("load default", len(data["referencePose"]["rotations"]))
-            skeleton = SkeletonBuilder().load_from_custom_unity_format(data, add_extra_end_site=add_extra_end_site)
+            data = extract_compressed_bson(data)
+            #print("load default", len(data["referencePose"]["rotations"]))
+            skeleton = SkeletonBuilder().load_from_custom_unity_format(data, add_extra_end_site=False)
         
         if skeleton_model is not None:
             try:
@@ -668,8 +675,7 @@ class MotionDatabase(UserDatabase):
     def _insert_motion_from_buffer_to_db(self, name, collection, skeleton_name, meta_data, is_processed):
         base64_data_str = self.get_data_from_buffer(name)
         data = base64.decodebytes(base64_data_str.encode('utf-8'))
-        data = bz2.decompress(data)
-        data = bson.loads(data)
+        data = extract_compressed_bson(data)
         n_frames = 0
         if "poses" in data:
             n_frames = len(data["poses"])
@@ -778,8 +784,7 @@ class MotionDatabase(UserDatabase):
         mv = None
         if model_id not in self._mp_buffer:
             data, cluster_tree_data, skeleton_name = self.get_model_by_id(model_id)
-            data = bz2.decompress(data)
-            data = bson.loads(data)
+            data = extract_compressed_bson(data)
             self._mp_buffer[model_id] = MotionPrimitiveModelWrapper()
             mgrd_skeleton = convert_to_mgrd_skeleton(self.skeletons[skeleton_name])
             self._mp_buffer[model_id]._initialize_from_json(mgrd_skeleton, data)
