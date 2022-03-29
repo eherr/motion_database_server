@@ -285,6 +285,7 @@ class MotionDatabase(UserDatabase):
                 data = bson.dumps(json.loads(graph_data))
                 records = [[graph_name,skeleton_name, data]]
                 self.insert_records(self.graph_table, ["name","skeleton","data"], records)
+            
 
 
     def load_skeleton(self, skeleton_name):
@@ -403,6 +404,19 @@ class MotionDatabase(UserDatabase):
             intersection_list.append(("public",public))
         collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
         return collection_records
+    
+    def get_collection_tree(self, parent_id, owner=-1, public=-1):
+        col_dict = dict()
+        for c in self.get_collection_list_by_id(parent_id, owner, public):
+            col_id = c[0]
+            col_data = dict()
+            col_data["name"] = c[1]
+            col_data["type"] = c[2]
+            col_data["owner"] = c[3]
+            col_data["public"] = c[4]
+            col_data["sub_tree"] = self.get_collection_tree(col_id, owner, public)
+            col_dict[col_id] = col_data
+        return col_dict
 
     def parse_collection(self, skeleton_name, parent=0):
         collections = dict()
@@ -961,3 +975,21 @@ class MotionDatabase(UserDatabase):
         if len(r) > 0:
             owner = r[0][0]
         return owner
+
+    def get_access_rights_to_collections(self, input_data):
+        # set public access
+        owner = -1
+        public = 1
+        # give access to collections owned by user
+        if "token" in input_data:
+            owner = self.get_user_id_from_token(input_data["token"])
+            role = self.get_user_role(owner)
+            # allow admin to specify custom filter
+            if role == "admin":
+                public = -1
+                owner = -1
+                if "public" in input_data:
+                    public = input_data["public"]
+                if "owner" in input_data:
+                    owner = input_data["owner"]
+        return owner, public

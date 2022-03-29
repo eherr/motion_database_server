@@ -900,22 +900,8 @@ class GetCollectionListHandler(BaseHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            # set public access
-            owner = -1
-            public = 1
-            # give access to collections owned by user
-            if "token" in input_data:
-                owner = self.motion_database.get_user_id_from_token(input_data["token"])
-                role = self.motion_database.get_user_role(owner)
-                # allow admin to specify custom filter
-                if role == USER_ROLE_ADMIN:
-                    public = -1
-                    owner = -1
-                    if "public" in input_data:
-                        public = input_data["public"]
-                    if "owner" in input_data:
-                        owner = input_data["owner"]
-            cols_str = "[]"
+            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            col_str = "[]"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
                 cols = self.motion_database.get_collection_list_by_id(parent_id, owner, public)
@@ -928,6 +914,31 @@ class GetCollectionListHandler(BaseHandler):
         finally:
             self.finish()
 
+class GetCollectionTreeHandler(BaseHandler):
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
+        self.app = application
+        self.db_path = self.app.db_path
+        self.motion_database = self.app.motion_database
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            input_data = json.loads(input_str)
+            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            cols_str = "{}"
+            if "parent_id" in input_data:
+                parent_id = input_data["parent_id"]
+                col_tree = self.motion_database.get_collection_tree(parent_id, owner, public)
+                cols_str = json.dumps(col_tree)
+            self.write(cols_str)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
 
 class GetCollectionHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
@@ -1621,4 +1632,5 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/delete_character_model", DeleteCharacterModelHandler),
                             (r"/download_character_model", DownloadCharacterModelHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
-                            (r"/get_motion_list_by_name", GetMotionListByNameHandler)]
+                            (r"/get_motion_list_by_name", GetMotionListByNameHandler),
+                            (r"/get_collection_tree", GetCollectionTreeHandler)]
