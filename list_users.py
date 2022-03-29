@@ -21,9 +21,9 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from mocap_server.motion_database import MotionDatabase, TABLES2
-from anim_utils.utilities.io_helper_functions import load_json_file
-import argparse
+from motion_database_server.motion_database import MotionDatabase, TABLES2
+from motion_database_server.utils import load_json_file
+
 
 def list_users(path):
     con = MotionDatabase()

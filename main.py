@@ -20,22 +20,17 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database_server.motion_database import MotionDatabase, TABLES2
+from motion_database_server.motion_database_server import DBApplicationServer
 from motion_database_server.utils import load_json_file
-import argparse
 
-def remove_user(path, user_name):
-    con = MotionDatabase()
-    con.connect(path)
-    con.remove_user(user_name)
+
+def main(config):
+    server = DBApplicationServer(**config)
+    server.start()
+
 
 
 CONFIG_FILE = "db_server_config.json"
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
-    parser = argparse.ArgumentParser(description='Remove db user.')
-    parser.add_argument('name', nargs='?', help='user name')
-    args = parser.parse_args()
-    if args.name is not None and "db_path" in config:
-        db_path = config["db_path"]
-        remove_user(db_path, args.name)
+    main(config)

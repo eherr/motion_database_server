@@ -30,10 +30,10 @@ import threading
 import subprocess
 from multiprocessing import Process
 import tornado.web
-from motion_database import  get_bvh_string
+from motion_database_server.motion_database import  get_bvh_string
 from anim_utils.animation_data import BVHReader, MotionVector, BVHWriter
-from kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
-from base_handler import BaseHandler
+from motion_database_server.kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
+from motion_database_server.base_handler import BaseHandler
 
 DEFAULT_SKELETON = "custom"
 USER_ROLE_ADMIN = "admin"
@@ -524,6 +524,7 @@ class UploadMotionHandler(BaseHandler):
             print("upload motion", is_processed, input_data["is_processed"])
             if meta_data!= b"x00":
                 meta_data = bson.dumps(meta_data)
+                meta_data = bz2.compress(meta_data)
             data = input_data["data"]
             #data = base64.decodebytes(data.encode('utf-8'))
             res_str = self.motion_database.upload_motion(part_idx, n_parts, collection,
@@ -606,7 +607,9 @@ class ReplaceMotionHandler(BaseHandler):
             meta_data = None
             if "meta_data" in input_data:
                 try:
-                    meta_data = bson.dumps(json.loads(input_data["meta_data"]))
+                    meta_data = json.loads(input_data["meta_data"])
+                    meta_data = bson.dumps(meta_data)
+                    meta_data = bz2.compress(meta_data)
                 except:
                     print("Warning: could not read meta data")
                     meta_data = None
@@ -618,6 +621,7 @@ class ReplaceMotionHandler(BaseHandler):
                 skeleton_name = input_data["skeleton_name"]
             if "data" in input_data:
                 motion_data = bson.dumps(input_data["data"])
+                motion_data = bz2.compress(motion_data)
             if is_processed:
                 result_str = self.motion_database.replace_preprocessed_data(input_data["motion_id"],
                                                                 collection,
@@ -896,22 +900,8 @@ class GetCollectionListHandler(BaseHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            # set public access
-            owner = -1
-            public = 1
-            # give access to collections owned by user
-            if "token" in input_data:
-                owner = self.motion_database.get_user_id_from_token(input_data["token"])
-                role = self.motion_database.get_user_role(owner)
-                # allow admin to specify custom filter
-                if role == USER_ROLE_ADMIN:
-                    public = -1
-                    owner = -1
-                    if "public" in input_data:
-                        public = input_data["public"]
-                    if "owner" in input_data:
-                        owner = input_data["owner"]
-            cols_str = "[]"
+            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            col_str = "[]"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
                 cols = self.motion_database.get_collection_list_by_id(parent_id, owner, public)
@@ -924,6 +914,31 @@ class GetCollectionListHandler(BaseHandler):
         finally:
             self.finish()
 
+class GetCollectionTreeHandler(BaseHandler):
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
+        self.app = application
+        self.db_path = self.app.db_path
+        self.motion_database = self.app.motion_database
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            input_data = json.loads(input_str)
+            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            cols_str = "{}"
+            if "parent_id" in input_data:
+                parent_id = input_data["parent_id"]
+                col_tree = self.motion_database.get_collection_tree(parent_id, owner, public)
+                cols_str = json.dumps(col_tree)
+            self.write(cols_str)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
 
 class GetCollectionHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
@@ -1617,4 +1632,5 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/delete_character_model", DeleteCharacterModelHandler),
                             (r"/download_character_model", DownloadCharacterModelHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
-                            (r"/get_motion_list_by_name", GetMotionListByNameHandler)]
+                            (r"/get_motion_list_by_name", GetMotionListByNameHandler),
+                            (r"/get_collection_tree", GetCollectionTreeHandler)]

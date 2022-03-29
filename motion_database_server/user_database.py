@@ -26,7 +26,7 @@ import bson
 import numpy as np
 import hashlib
 import jwt
-from database_wrapper import DatabaseWrapper
+from motion_database_server.database_wrapper import DatabaseWrapper
 import rstr
 import string
 

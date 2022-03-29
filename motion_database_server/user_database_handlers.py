@@ -23,7 +23,7 @@
 import json
 import tornado.web
 import requests
-from base_handler import BaseHandler
+from motion_database_server.base_handler import BaseHandler
 
 
 class StartJobHandler(BaseHandler):

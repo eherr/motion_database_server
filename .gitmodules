@@ -1,6 +1,3 @@
-[submodule "morphablegraphs"]
-	path = morphablegraphs
-	url = git@github.com:eherr/morphablegraphs.git
 [submodule "webclient"]
 	path = webclient
 	url = git@github.com:eherr/motion_database_webclient.git

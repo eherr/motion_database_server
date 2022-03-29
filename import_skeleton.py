@@ -23,7 +23,7 @@
 import bson
 import argparse
 from motion_database import MotionDatabase
-from anim_utils.utilities.io_helper_functions import load_json_file
+from utils import load_json_file
 from anim_utils.animation_data import BVHReader, SkeletonBuilder
 
 CONFIG_FILE = "db_server_config.json"

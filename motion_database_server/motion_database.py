@@ -27,7 +27,7 @@ import bz2
 import base64
 import numpy as np
 import pandas as pd
-from user_database import UserDatabase
+from motion_database_server.user_database import UserDatabase
 from anim_utils.animation_data.bvh import BVHReader, BVHWriter
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from anim_utils.animation_data.motion_vector import MotionVector
@@ -79,6 +79,16 @@ def get_bvh_from_str(bvh_str):
     lines = [l for l in lines if len(l) > 0]
     bvh_reader.process_lines(lines)
     return bvh_reader
+
+
+def extract_compressed_bson(data):
+    try:
+        data = bson.loads(bz2.decompress(data))
+    except:
+        data = bson.loads(data)
+        print("Warning: data was not compressed")
+        pass
+    return data
 
 INT_T = "INTERGER"
 BLOB_T = "BLOB"
@@ -238,8 +248,7 @@ class MotionDatabase(UserDatabase):
         data, skeleton, meta_data = self.get_motion_by_id(motion_id)
         if data is None:
             return
-        data = bz2.decompress(data)
-        motion_dict = bson.loads(data)
+        motion_dict = extract_compressed_bson(data)
         print("write to file")
         motion_vector = MotionVector()
         motion_vector.from_custom_unity_format(motion_dict)
@@ -276,16 +285,15 @@ class MotionDatabase(UserDatabase):
                 data = bson.dumps(json.loads(graph_data))
                 records = [[graph_name,skeleton_name, data]]
                 self.insert_records(self.graph_table, ["name","skeleton","data"], records)
+            
 
 
     def load_skeleton(self, skeleton_name):
         data, skeleton_model = self.get_skeleton_by_name(skeleton_name)
         if data is not None:
-            data = bz2.decompress(data)
-            data = bson.loads(data)
-            add_extra_end_site=False
-            print("load default", len(data["referencePose"]["rotations"]))
-            skeleton = SkeletonBuilder().load_from_custom_unity_format(data, add_extra_end_site=add_extra_end_site)
+            data = extract_compressed_bson(data)
+            #print("load default", len(data["referencePose"]["rotations"]))
+            skeleton = SkeletonBuilder().load_from_custom_unity_format(data, add_extra_end_site=False)
         
         if skeleton_model is not None:
             try:
@@ -396,6 +404,19 @@ class MotionDatabase(UserDatabase):
             intersection_list.append(("public",public))
         collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
         return collection_records
+    
+    def get_collection_tree(self, parent_id, owner=-1, public=-1):
+        col_dict = dict()
+        for c in self.get_collection_list_by_id(parent_id, owner, public):
+            col_id = c[0]
+            col_data = dict()
+            col_data["name"] = c[1]
+            col_data["type"] = c[2]
+            col_data["owner"] = c[3]
+            col_data["public"] = c[4]
+            col_data["sub_tree"] = self.get_collection_tree(col_id, owner, public)
+            col_dict[col_id] = col_data
+        return col_dict
 
     def parse_collection(self, skeleton_name, parent=0):
         collections = dict()
@@ -668,8 +689,7 @@ class MotionDatabase(UserDatabase):
     def _insert_motion_from_buffer_to_db(self, name, collection, skeleton_name, meta_data, is_processed):
         base64_data_str = self.get_data_from_buffer(name)
         data = base64.decodebytes(base64_data_str.encode('utf-8'))
-        data = bz2.decompress(data)
-        data = bson.loads(data)
+        data = extract_compressed_bson(data)
         n_frames = 0
         if "poses" in data:
             n_frames = len(data["poses"])
@@ -778,8 +798,7 @@ class MotionDatabase(UserDatabase):
         mv = None
         if model_id not in self._mp_buffer:
             data, cluster_tree_data, skeleton_name = self.get_model_by_id(model_id)
-            data = bz2.decompress(data)
-            data = bson.loads(data)
+            data = extract_compressed_bson(data)
             self._mp_buffer[model_id] = MotionPrimitiveModelWrapper()
             mgrd_skeleton = convert_to_mgrd_skeleton(self.skeletons[skeleton_name])
             self._mp_buffer[model_id]._initialize_from_json(mgrd_skeleton, data)
@@ -956,3 +975,21 @@ class MotionDatabase(UserDatabase):
         if len(r) > 0:
             owner = r[0][0]
         return owner
+
+    def get_access_rights_to_collections(self, input_data):
+        # set public access
+        owner = -1
+        public = 1
+        # give access to collections owned by user
+        if "token" in input_data:
+            owner = self.get_user_id_from_token(input_data["token"])
+            role = self.get_user_role(owner)
+            # allow admin to specify custom filter
+            if role == "admin":
+                public = -1
+                owner = -1
+                if "public" in input_data:
+                    public = input_data["public"]
+                if "owner" in input_data:
+                    owner = input_data["owner"]
+        return owner, public

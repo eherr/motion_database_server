@@ -2,15 +2,15 @@
 
 The Tornado-based web server provdes a REST interface to an SQLite database for the management of skeleton animation data and statistical motion models. To visualize the motions in the database, a Unity WebGL client is provided.  
 
- 
+
 ![Screenshot](doc/images/screenshot.png)
 <p align="center">
 <em>Screenshot of the web client.</em>
 
 To edit and annotate data in the database, the [motion_preprocessing_tool](https://github.com/eherr/motion_preprocessing_tool) can be used. We plan to move the motion editing functionality into the web client.
- 
 
-  
+
+
 ## Setup Instructions
 
 1. Install Python 3.6 or above in a virtual environment.
@@ -52,7 +52,7 @@ python import_bvh_from_directory.py skeleton_name directory_path
 
 9. Start the web server: 
 ```bat
-python run_motion_db_server_standalone.py
+python main.py
 ```
 
 10. Build the web client using angular: 
