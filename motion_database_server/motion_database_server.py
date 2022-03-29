@@ -86,7 +86,7 @@ class DBApplicationServer(tornado.web.Application):
         request_handler_list += MOTION_DB_HANDLER_LIST
         request_handler_list += USER_DB_HANDLER_LIST
         request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]
-        template_path = os.path.join(os.path.dirname(__file__), "templates")
+        template_path = os.path.join(os.path.dirname(__file__), "..", "templates")
         settings = dict(template_path=template_path)
         tornado.web.Application.__init__(self, request_handler_list, "", None, **settings)
         self.server_registry = dict()
