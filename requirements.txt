@@ -1,7 +1,7 @@
 numpy==1.16.0
 fastdtw==0.3.2
 matplotlib==2.0.2
-requests==2.18.4
+requests==2.20.0
 scipy==1.4.1
 tornado==4.5.2
 httplib2==0.10.3
