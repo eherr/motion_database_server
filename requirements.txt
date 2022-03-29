@@ -1,4 +1,4 @@
-numpy==1.16.0
+numpy==1.21.0
 fastdtw==0.3.2
 matplotlib==2.0.2
 requests==2.18.4
