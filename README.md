@@ -15,14 +15,16 @@ To edit and annotate data in the database, the [motion_preprocessing_tool](https
 
 1. Install Python 3.6 or above in a virtual environment.
 
-2. Clone the repository with all submodules. The mgrd submodule of morphablegraphs is optional and can be ignored.
+2. Clone the repository with all submodules. 
 ```bat
 git clone --recursive git@github.com:eherr/motion_database_server.git
 ```
 
-3. Install the base package for [animation data editing](https://github.com/eherr/anim_utils).
+3. Install the base packages for [animation data editing](https://github.com/eherr/anim_utils) and [statistical motion modelling](https://github.com/eherr/morphablegraphs.git)
 ```bat
-pip install git+https://github.com/eherr/anim_utils/
+pip install git+https://github.com/eherr/anim_utils
+
+pip install git+https://github.com/dfki-asr/morphablegraphs
 ```
 
 4. Install other dependencies
