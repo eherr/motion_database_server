@@ -20,9 +20,7 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import os
 import time
-import numpy as np
 import json
 import bson
 import bz2
@@ -126,39 +124,6 @@ class GetMetaHandler(BaseHandler):
                              activate_port_forwarding=self.app.activate_port_forwarding,
                              enable_download=self.app.enable_download)
 
-        self.write(json.dumps(result_object))
-
-
-class AuthenticateHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    def post(self):
-        input_str = self.request.body.decode("utf-8")
-        input_data = json.loads(input_str)
-        user_id = -1
-        if "username" in input_data and "password" in input_data:
-            user = input_data["username"]
-            password = input_data["password"]
-            user_id = self.motion_database.authenticate_user(user, password)
-        else:
-            print("missing required fields")
-        
-        result_object = dict()
-        result_object["user_id"] = user_id
-        if user_id > -1:
-            print("aunticated user", user_id)
-            result_object["username"] = input_data["username"]
-            playload = {"user_id": user_id, "username": input_data["username"]}
-            result_object["token"] = self.app.motion_database.generate_token(playload)
-            result_object["role"] = self.app.motion_database.get_user_role(user_id)
-        else:
-            print("failed to authenticate user")
         self.write(json.dumps(result_object))
 
 
@@ -1299,7 +1264,6 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/start_mg_state_server", StartServerHandler),
                             (r"/start_cluster_job", StartClusterJobHandler),
                             (r"/get_meta_data", GetMetaHandler),
-                            (r"/authenticate", AuthenticateHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
                             (r"/get_motion_list_by_name", GetMotionListByNameHandler),
                             (r"/get_collection_tree", GetCollectionTreeHandler)]

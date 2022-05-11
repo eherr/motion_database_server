@@ -24,7 +24,6 @@
 import os
 import json
 import threading
-from multiprocessing import Process
 import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
@@ -36,6 +35,7 @@ from motion_database_server.motion_database_handlers import BaseHandler, MOTION_
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
+from motion_database_server.job_server_handlers import JOB_SERVER_HANDLER_LIST
 
 
 class CustomStaticFileHander(tornado.web.StaticFileHandler):
@@ -89,6 +89,7 @@ class DBApplicationServer(tornado.web.Application):
         request_handler_list += SKELETON_DB_HANDLER_LIST
         request_handler_list += MOTION_DB_HANDLER_LIST
         request_handler_list += CHARACTER_HANDLER_LIST
+        request_handler_list += JOB_SERVER_HANDLER_LIST
         request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]
         template_path = os.path.join(os.path.dirname(__file__), "..", "templates")
         settings = dict(template_path=template_path)

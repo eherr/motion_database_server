@@ -22,141 +22,8 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
 import tornado.web
-import requests
 from motion_database_server.base_handler import BaseHandler
 
-
-class StartJobHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            print("try to start job")
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            name = input_data["name"]
-            print("try to start", name, input_data["cmd"])
-            success = False
-            if name in self.app.server_registry:
-                server_info = self.app.server_registry[name]
-                has_access = False
-                if self.app.activate_user_authentification:
-                    token = input_data["token"]
-                    group_id = input_data["group_id"]
-                    owner_id = server_info["owner_id"]
-                    request_user_id = self.app.motion_database.get_user_id_from_token(token)
-                    if self.app.motion_database.is_user_in_group(group_id, request_user_id):
-                        has_access = self.app.motion_database.has_access(group_id, owner_id)
-                else:
-                    has_access = True
-                if has_access:
-                    pload = dict()
-                    pload["cmd"] = input_data["cmd"]
-                    url_str = server_info["protocol"]+"://"+server_info["address"]+":"+str(server_info["port"])+"/start_job"
-                    print(url_str)
-                    r = requests.post(url_str, data = json.dumps(pload))
-                    success = True
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class GetJobServerListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    def get(self):
-        print("get servers")
-        server_registry_copy = list()
-        for key in self.app.server_registry:
-            data = self.app.server_registry[key]
-            status = self.app.get_server_status(key)
-            if "n_processes" in status:
-                data["n_procesess"] = status["n_processes"]
-            #server_registry_copy[key] = data
-            server_registry_copy.append(data)
-        response = json.dumps(server_registry_copy)
-        self.write(response)
-
-class RegisterJobServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           name = input_data["name"]
-           data = dict()
-           success = False
-           has_access = False
-           if self.app.activate_user_authentification:
-               token = input_data["token"]
-               data["owner_id"] = self.app.motion_database.get_user_id_from_token(token)
-               has_access = True
-           else:
-                has_access = True
-           if has_access:
-               data["name"] = input_data["name"] # hostname
-               data["user"] = input_data["user"]
-               data["address"] = input_data["address"]
-               data["port"] = input_data["port"]
-               data["protocol"] = input_data["protocol"]
-               data["os"] = input_data["os"]
-               print("register server", input_data["name"], "for user", data["user"])
-               self.app.server_registry[name] = data
-               success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class UnregisterJobServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           success = False
-           name = input_data["name"]
-           if name in self.app.server_registry:
-               print("unregister server", input_data["name"], "for user")
-               del self.app.server_registry[name]
-               success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
 
 class GetUserListHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
@@ -567,11 +434,40 @@ class LoginHandler(BaseHandler):
             print("failed to authenticate user")
         self.write(json.dumps(result_object))
 
-USER_DB_HANDLER_LIST = [(r"/servers/start", StartJobHandler),       
-                            (r"/servers/add", RegisterJobServerHandler),
-                            (r"/servers/remove", UnregisterJobServerHandler),
-                            (r"/servers", GetJobServerListHandler),
-                            (r"/users", GetUserListHandler),
+class AuthenticateHandler(BaseHandler):
+    """Handles HTTP POST Requests to a registered server url."""
+
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(
+            self, application, request, **kwargs)
+        self.app = application
+        self.motion_database = self.app.motion_database
+
+    def post(self):
+        input_str = self.request.body.decode("utf-8")
+        input_data = json.loads(input_str)
+        user_id = -1
+        if "username" in input_data and "password" in input_data:
+            user = input_data["username"]
+            password = input_data["password"]
+            user_id = self.motion_database.authenticate_user(user, password)
+        else:
+            print("missing required fields")
+        
+        result_object = dict()
+        result_object["user_id"] = user_id
+        if user_id > -1:
+            print("aunticated user", user_id)
+            result_object["username"] = input_data["username"]
+            playload = {"user_id": user_id, "username": input_data["username"]}
+            result_object["token"] = self.app.motion_database.generate_token(playload)
+            result_object["role"] = self.app.motion_database.get_user_role(user_id)
+        else:
+            print("failed to authenticate user")
+        self.write(json.dumps(result_object))
+
+
+USER_DB_HANDLER_LIST = [(r"/users", GetUserListHandler),
                             (r"/users/info", GetUserInfoHandler),
                             (r"/users/edit", EditUserHandler),
                             (r"/users/reset_password", ResetUserPasswordHandler),
@@ -585,5 +481,6 @@ USER_DB_HANDLER_LIST = [(r"/servers/start", StartJobHandler),
                             (r"/groups/remove", RemoveGroupHandler),
                             (r"/groups/give_access", GriveAccessToGroupHandler),
                             (r"/groups/remove_access", RemoveAccessFromGroupHandler),
-                            (r"/users/verify", LoginHandler)
+                            (r"/users/verify", LoginHandler),
+                            (r"/authenticate", AuthenticateHandler)
                             ]
