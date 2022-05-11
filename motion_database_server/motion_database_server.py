@@ -34,7 +34,7 @@ from motion_database_server.motion_database import MotionDatabase
 from motion_database_server.kubernetes_interface import load_kube_config
 from motion_database_server.motion_database_handlers import BaseHandler, MOTION_DB_HANDLER_LIST
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
-from motion_database_server.skeleton_database_handlers import SKELTON_DB_HANDLER_LIST
+from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
 
 
@@ -86,7 +86,7 @@ class DBApplicationServer(tornado.web.Application):
             self.k8s_namespace = ""
         request_handler_list = [(r"/", IndexHandler)]
         request_handler_list += USER_DB_HANDLER_LIST
-        request_handler_list += SKELOTON_DB_HANDLER_LIST
+        request_handler_list += SKELETON_DB_HANDLER_LIST
         request_handler_list += MOTION_DB_HANDLER_LIST
         request_handler_list += CHARACTER_HANDLER_LIST
         request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]

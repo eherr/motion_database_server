@@ -216,7 +216,7 @@ class RemoveSkeletonHandler(BaseHandler):
             self.finish()
 
 
-SKELOTON_DB_HANDLER_LIST = [(r"/get_skeleton_list", GetSkeletonListHandler),
+SKELETON_DB_HANDLER_LIST = [(r"/get_skeleton_list", GetSkeletonListHandler),
                             (r"/get_skeleton", GetSkeletonHandler),
                             (r"/get_skeleton_model", GetSkeletonModelHandler),
                             (r"/create_new_skeleton", NewSkeletonHandler),
