@@ -23,7 +23,77 @@
 import json
 import tornado.web
 import requests
+import subprocess
+from multiprocessing import Process
 from motion_database_server.base_handler import BaseHandler
+from motion_database_server.kubernetes_interface import start_kube_job, stop_kube_job
+
+
+class StartClusterJobHandler(BaseHandler):
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
+        self.app = application
+        self.motion_database = self.app.motion_database
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           has_access = self.motion_database.check_rights(input_data)
+           if not has_access:
+               print("Error: no access rights")
+               self.write("Error: no access right")
+            
+           namespace = self.app.k8s_namespace
+           image_name = input_data["image_name"]
+           job_name = input_data["job_name"]
+           job_desc = input_data["job_desc"]
+           resources = input_data["resources"]
+           try:
+               stop_kube_job(namespace, job_name)
+           except:
+               pass
+           start_kube_job(namespace, job_name, image_name, job_desc, resources)
+           print("start job", job_name)
+           self.write("start job")
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
+class StartMGServerHandler(BaseHandler):
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
+        self.app = application
+        self.motion_database = self.app.motion_database
+
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           has_access = self.motion_database.check_rights(input_data)
+           if not has_access:
+                print("Error: no access rights")
+                self.write("Error: no access right")
+           if "graph_id" in input_data:
+               graph_id = input_data["graph_id"]
+               p = Process(target=subprocess.call, args=("python run_websocket_server.py ",))
+               p.start()
+               
+               print("start server")
+           self.write("start server")
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
 
 
 class StartJobHandler(BaseHandler):
@@ -159,7 +229,9 @@ class UnregisterJobServerHandler(BaseHandler):
             self.finish()
 
 
-JOB_SERVER_HANDLER_LIST = [(r"/servers/start", StartJobHandler),       
+JOB_SERVER_HANDLER_LIST = [(r"/start_cluster_job", StartClusterJobHandler),
+                            (r"/start_mg_state_server", StartMGServerHandler),
+                            (r"/servers/start", StartJobHandler),       
                             (r"/servers/add", RegisterJobServerHandler),
                             (r"/servers/remove", UnregisterJobServerHandler),
                             (r"/servers", GetJobServerListHandler)]

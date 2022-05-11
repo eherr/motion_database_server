@@ -24,12 +24,9 @@ import time
 import json
 import bson
 import bz2
-import subprocess
-from multiprocessing import Process
 import tornado.web
 from motion_database_server.utils import get_bvh_string
 from anim_utils.animation_data import MotionVector
-from motion_database_server.kubernetes_interface import start_kube_job, stop_kube_job
 from motion_database_server.base_handler import BaseHandler
 
 
@@ -1097,72 +1094,6 @@ class RemoveGraphHandler(BaseHandler):
             self.finish()
 
 
-
-class StartServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           has_access = self.motion_database.check_rights(input_data)
-           if not has_access:
-                print("Error: no access rights")
-                self.write("Error: no access right")
-           if "graph_id" in input_data:
-               graph_id = input_data["graph_id"]
-               p = Process(target=subprocess.call, args=("python run_websocket_server.py ",))
-               p.start()
-               
-               print("start server")
-           self.write("start server")
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class StartClusterJobHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           has_access = self.motion_database.check_rights(input_data)
-           if not has_access:
-               print("Error: no access rights")
-               self.write("Error: no access right")
-            
-           namespace = self.app.k8s_namespace
-           image_name = input_data["image_name"]
-           job_name = input_data["job_name"]
-           job_desc = input_data["job_desc"]
-           resources = input_data["resources"]
-           try:
-               stop_kube_job(namespace, job_name)
-           except:
-               pass
-           start_kube_job(namespace, job_name, image_name, job_desc, resources)
-           print("start job", job_name)
-           self.write("start job")
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
 class GetCollectionsByNameHandler(BaseHandler):
     """Handles HTTP POST Requests to a registered server url."""
 
@@ -1261,8 +1192,6 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/get_sample", GetSampleHandler),
                             (r"/download_motion_primitive_sample", DownloadMotionPrimitiveSampleHandler),
                             (r"/get_time_function", GetTimeFunctionHandler),
-                            (r"/start_mg_state_server", StartServerHandler),
-                            (r"/start_cluster_job", StartClusterJobHandler),
                             (r"/get_meta_data", GetMetaHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
                             (r"/get_motion_list_by_name", GetMotionListByNameHandler),
