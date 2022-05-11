@@ -740,8 +740,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase):
             filter_conditions+=[("skeletonType", skeleton)]
         r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
         return r
-        
-
+    
     def get_motion_by_id_legacy(self, m_id):
         filter_conditions = [("ID",m_id)]
         r = self.query_table(self.motion_table, ["quaternionFrames", "metaInfo", "timeFunction", "skeletonType", "subject", "isAligned", "Timestamp"], filter_conditions)
@@ -856,20 +855,3 @@ class MotionDatabase(UserDatabase, SkeletonDatabase):
             owner = r[0][0]
         return owner
 
-    def get_access_rights_to_collections(self, input_data):
-        # set public access
-        owner = -1
-        public = 1
-        # give access to collections owned by user
-        if "token" in input_data:
-            owner = self.get_user_id_from_token(input_data["token"])
-            role = self.get_user_role(owner)
-            # allow admin to specify custom filter
-            if role == "admin":
-                public = -1
-                owner = -1
-                if "public" in input_data:
-                    public = input_data["public"]
-                if "owner" in input_data:
-                    owner = input_data["owner"]
-        return owner, public

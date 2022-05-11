@@ -402,6 +402,35 @@ class RemoveGraphHandler(BaseDBHandler):
             self.finish()
 
 
+class GetTimeFunctionHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            print("get_time_function",input_str)
+
+            input_data = json.loads(input_str)
+            m_id = input_data["clip_id"]
+            data, meta_data, skeleton_name = self.motion_database.get_preprocessed_data_by_id(m_id)
+            if meta_data is not None and meta_data != b"x00" and meta_data != "":
+                meta_data = bz2.decompress(meta_data)
+                meta_data = bson.loads(meta_data)
+                if "time_function" in meta_data:
+                    time_function_str = json.dumps(meta_data["time_function"])
+                    self.write(time_function_str)
+                else:
+                    self.write("")
+            else:
+                self.write("")
+
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
 MG_MODEL_HANDLER_LIST = [ (r"/get_model_list", GetModelListHandler),
                             (r"/get_graph_list", GetGraphListHandler),
                             (r"/upload_motion_model", UploadMotionModelHandler),
@@ -411,6 +440,7 @@ MG_MODEL_HANDLER_LIST = [ (r"/get_model_list", GetModelListHandler),
                             (r"/replace_graph", ReplaceGraphHandler),
                             (r"/download_graph", DownloadGraphHandler),
                             (r"/remove_graph", RemoveGraphHandler),
+                            (r"/get_time_function", GetTimeFunctionHandler),
                             (r"/download_motion_model", DownloadMotionModelHandler),
                             (r"/download_cluster_tree", DownloadClusterTreeHandler),
                             (r"/download_motion_primitive_sample", DownloadMotionPrimitiveSampleHandler),

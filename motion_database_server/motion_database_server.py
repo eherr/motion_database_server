@@ -31,7 +31,7 @@ import tornado.web
 import requests
 from motion_database_server.motion_database import MotionDatabase
 from motion_database_server.kubernetes_interface import load_kube_config
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseHandler, BaseDBHandler
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
@@ -66,6 +66,15 @@ class IndexHandler(BaseHandler):
                     )
 
 
+class GetMetaHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
+                             activate_port_forwarding=self.app.activate_port_forwarding,
+                             enable_download=self.app.enable_download)
+
+        self.write(json.dumps(result_object))
+
 
 class DBApplicationServer(tornado.web.Application):
     """ Wrapper for the MotionDatabase class that starts the Tornado Webserver
@@ -86,13 +95,15 @@ class DBApplicationServer(tornado.web.Application):
             self.k8s_namespace = kube_config["namespace"]
         else:
             self.k8s_namespace = ""
-        request_handler_list = [(r"/", IndexHandler)]
+        request_handler_list = [(r"/", IndexHandler),
+                            (r"/get_meta_data", GetMetaHandler)]
         request_handler_list += USER_DB_HANDLER_LIST
         request_handler_list += SKELETON_DB_HANDLER_LIST
         request_handler_list += MOTION_DB_HANDLER_LIST
         request_handler_list += MG_MODEL_HANDLER_LIST
         request_handler_list += CHARACTER_HANDLER_LIST
         request_handler_list += JOB_SERVER_HANDLER_LIST
+
         request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]
         template_path = os.path.join(os.path.dirname(__file__), "..", "templates")
         settings = dict(template_path=template_path)

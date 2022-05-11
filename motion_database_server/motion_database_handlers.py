@@ -75,19 +75,6 @@ class GetMotionInfoHandler(BaseDBHandler):
         delta = time.time()- start
         print("processed query in", delta, "seconds")
 
-
-
-class GetMetaHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
-                             activate_port_forwarding=self.app.activate_port_forwarding,
-                             enable_download=self.app.enable_download)
-
-        self.write(json.dumps(result_object))
-
-
-
 def load_bvh_str(filepath):
     bvh_str = ""
     with open(filepath, "r") as infile:
@@ -162,34 +149,6 @@ class DownloadAnnotationHandler(BaseDBHandler):
         finally:
             self.finish()
 
-
-class GetTimeFunctionHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            print("get_time_function",input_str)
-
-            input_data = json.loads(input_str)
-            m_id = input_data["clip_id"]
-            data, meta_data, skeleton_name = self.motion_database.get_preprocessed_data_by_id(m_id)
-            if meta_data is not None and meta_data != b"x00" and meta_data != "":
-                meta_data = bz2.decompress(meta_data)
-                meta_data = bson.loads(meta_data)
-                if "time_function" in meta_data:
-                    time_function_str = json.dumps(meta_data["time_function"])
-                    self.write(time_function_str)
-                else:
-                    self.write("")
-            else:
-                self.write("")
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
 
 class UploadMotionHandler(BaseDBHandler):
     @tornado.gen.coroutine
@@ -453,7 +412,7 @@ class GetCollectionListHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            owner, public = self.motion_database.get_user_access_rights(input_data)
             col_str = "[]"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
@@ -473,7 +432,7 @@ class GetCollectionTreeHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_access_rights_to_collections(input_data)
+            owner, public = self.motion_database.get_user_access_rights(input_data)
             cols_str = "{}"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
@@ -522,7 +481,7 @@ class ReplaceCollectionHandler(BaseDBHandler):
             if "id" in input_data and "token" in input_data:
                 collection_id = input_data["id"]
                 token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_motion(collection_id)
+                owner_id = self.motion_database.get_owner_of_collection(collection_id)
                 request_user_id = self.motion_database.get_user_id_from_token(token)
                 role = self.motion_database.get_user_role(request_user_id)
                 if request_user_id == owner_id or role == USER_ROLE_ADMIN:
@@ -555,7 +514,7 @@ class RemoveCollectionHandler(BaseDBHandler):
             if "id" in input_data and "token" in input_data:
                 collection_id = input_data["id"]
                 token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_motion(collection_id)
+                owner_id = self.motion_database.get_owner_of_collection(collection_id)
                 request_user_id = self.motion_database.get_user_id_from_token(token)
                 role = self.motion_database.get_user_role(request_user_id)
                 if request_user_id == owner_id or role == USER_ROLE_ADMIN:
@@ -640,8 +599,6 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/delete_motion", DeleteMotionHandler),
                             (r"/create_new_collection", NewCollectionHandler),
                             (r"/remove_collection", RemoveCollectionHandler),
-                            (r"/get_time_function", GetTimeFunctionHandler),
-                            (r"/get_meta_data", GetMetaHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
                             (r"/get_motion_list_by_name", GetMotionListByNameHandler),
                             (r"/get_collection_tree", GetCollectionTreeHandler)]
