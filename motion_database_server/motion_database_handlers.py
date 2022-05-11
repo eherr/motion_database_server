@@ -27,19 +27,12 @@ import bz2
 import tornado.web
 from motion_database_server.utils import get_bvh_string
 from anim_utils.animation_data import MotionVector
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 
 
 USER_ROLE_ADMIN = "admin"
 
-class GetMotionHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class GetMotionHandler(BaseDBHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
         print("get motion",input_str)
@@ -59,14 +52,8 @@ class GetMotionHandler(BaseHandler):
         print("retrieved clip in", delta, "seconds")
 
 
-class GetMotionInfoHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class GetMotionInfoHandler(BaseDBHandler):
+    @tornado.gen.coroutine
     def post(self):
         input_str = self.request.body.decode("utf-8")
         print("get motion info",input_str)
@@ -90,14 +77,8 @@ class GetMotionInfoHandler(BaseHandler):
 
 
 
-class GetMetaHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-
+class GetMetaHandler(BaseDBHandler):
+    @tornado.gen.coroutine
     def post(self):
         result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
                              activate_port_forwarding=self.app.activate_port_forwarding,
@@ -115,12 +96,7 @@ def load_bvh_str(filepath):
     return bvh_str
 
 
-class DownloadBVHHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class DownloadBVHHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -151,12 +127,7 @@ class DownloadBVHHandler(BaseHandler):
             self.finish()
 
 
-class DownloadAnnotationHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class DownloadAnnotationHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -192,12 +163,7 @@ class DownloadAnnotationHandler(BaseHandler):
             self.finish()
 
 
-class GetTimeFunctionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class GetTimeFunctionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -225,12 +191,7 @@ class GetTimeFunctionHandler(BaseHandler):
         finally:
             self.finish()
 
-class UploadMotionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class UploadMotionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -284,12 +245,7 @@ class UploadMotionHandler(BaseHandler):
         finally:
             self.finish()
 
-class UploadBVHClipHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class UploadBVHClipHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -321,12 +277,7 @@ class UploadBVHClipHandler(BaseHandler):
             self.finish()
 
 
-class ReplaceMotionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class ReplaceMotionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -390,12 +341,7 @@ class ReplaceMotionHandler(BaseHandler):
             self.finish()
 
 
-class DeleteMotionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class DeleteMotionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -431,12 +377,7 @@ class DeleteMotionHandler(BaseHandler):
 
 
 
-class GetMotionListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class GetMotionListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -478,13 +419,7 @@ class GetMotionListHandler(BaseHandler):
 
 
 
-class NewCollectionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = application.motion_database
-
+class NewCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -521,13 +456,7 @@ class NewCollectionHandler(BaseHandler):
             self.finish()
 
 
-class GetCollectionListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = self.app.motion_database
-
+class GetCollectionListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -547,13 +476,7 @@ class GetCollectionListHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetCollectionTreeHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = self.app.motion_database
-
+class GetCollectionTreeHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -573,13 +496,7 @@ class GetCollectionTreeHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetCollectionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = self.app.motion_database
-
+class GetCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -603,13 +520,7 @@ class GetCollectionHandler(BaseHandler):
             self.finish()
 
 
-class ReplaceCollectionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = self.app.motion_database
-
+class ReplaceCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -642,13 +553,7 @@ class ReplaceCollectionHandler(BaseHandler):
         finally:
             self.finish()
 
-class RemoveCollectionHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.db_path = self.app.db_path
-        self.motion_database = self.app.motion_database
-
+class RemoveCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -679,16 +584,7 @@ class RemoveCollectionHandler(BaseHandler):
             self.finish()      
 
 
-class GetCollectionsByNameHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-
+class GetCollectionsByNameHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -712,16 +608,7 @@ class GetCollectionsByNameHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetMotionListByNameHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-
+class GetMotionListByNameHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:

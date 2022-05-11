@@ -22,18 +22,10 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
 import tornado.web
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 
 
-class GetCharacterModelListHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class GetCharacterModelListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -51,12 +43,7 @@ class GetCharacterModelListHandler(BaseHandler):
             self.finish()
 
 
-class UploadCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class UploadCharacterModelHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -88,12 +75,7 @@ class UploadCharacterModelHandler(BaseHandler):
             self.finish()
 
 
-class DeleteCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class DeleteCharacterModelHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         print("Post method for deleting GLB file from server")
@@ -110,12 +92,7 @@ class DeleteCharacterModelHandler(BaseHandler):
         finally:
             self.finish()
 
-class DownloadCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class DownloadCharacterModelHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         print("Post method for binary file loading")

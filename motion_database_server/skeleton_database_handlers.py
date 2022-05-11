@@ -24,17 +24,12 @@ import json
 import bson
 import bz2
 import tornado.web
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 
 DEFAULT_SKELETON = "custom"
 
 
-class GetSkeletonListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class GetSkeletonListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -49,15 +44,8 @@ class GetSkeletonListHandler(BaseHandler):
             self.finish()
 
 
-class GetSkeletonHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
+class GetSkeletonHandler(BaseDBHandler):
+    @tornado.gen.coroutine
     def post(self):
         input_str = self.request.body.decode("utf-8")
         input_data = json.loads(input_str)
@@ -78,15 +66,8 @@ class GetSkeletonHandler(BaseHandler):
             self.write("Error")
 
 
-class GetSkeletonModelHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class GetSkeletonModelHandler(BaseDBHandler):
+    @tornado.gen.coroutine
     def post(self):
         input_str = self.request.body.decode("utf-8")
         input_data = json.loads(input_str)
@@ -104,12 +85,7 @@ class GetSkeletonModelHandler(BaseHandler):
             self.write("Error")
 
 
-class NewSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class NewSkeletonHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -151,12 +127,7 @@ class NewSkeletonHandler(BaseHandler):
             self.finish()
 
 
-class ReplaceSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class ReplaceSkeletonHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -199,12 +170,7 @@ class ReplaceSkeletonHandler(BaseHandler):
             self.finish()
 
 
-class RemoveSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class RemoveSkeletonHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:

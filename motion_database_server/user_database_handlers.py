@@ -22,24 +22,16 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
 import tornado.web
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 
 
-class GetUserListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetUserListHandler(BaseDBHandler):
     def get(self):
         user_list = self.app.motion_database.get_user_list()
         response = json.dumps(user_list)
         self.write(response)
 
-class GetUserAccessGroupListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetUserAccessGroupListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -64,22 +56,14 @@ class GetUserAccessGroupListHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetGroupListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetGroupListHandler(BaseDBHandler):
     def get(self):
         group_list = self.app.motion_database.get_group_list()
         response = json.dumps(group_list)
         self.write(response)
 
 
-class GetGroupMemberListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetGroupMemberListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -96,11 +80,7 @@ class GetGroupMemberListHandler(BaseHandler):
         finally:
             self.finish()
         
-class AddUserHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class AddUserHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -124,11 +104,7 @@ class AddUserHandler(BaseHandler):
         finally:
             self.finish()
 
-class EditUserHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class EditUserHandler(BaseDBHandler):
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
@@ -157,11 +133,7 @@ class EditUserHandler(BaseHandler):
         finally:
             self.finish()
 
-class RemoveUserHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class RemoveUserHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -188,11 +160,7 @@ class RemoveUserHandler(BaseHandler):
         finally:
             self.finish()
 
-class ResetUserPasswordHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class ResetUserPasswordHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -211,11 +179,7 @@ class ResetUserPasswordHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetUserInfoHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetUserInfoHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -251,11 +215,7 @@ class GetUserInfoHandler(BaseHandler):
             self.finish()
 
 
-class AddGroupHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class AddGroupHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -280,11 +240,7 @@ class AddGroupHandler(BaseHandler):
         finally:
             self.finish()
 
-class EditGroupHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class EditGroupHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -313,11 +269,7 @@ class EditGroupHandler(BaseHandler):
         finally:
             self.finish()
     
-class RemoveGroupHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class RemoveGroupHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -344,11 +296,7 @@ class RemoveGroupHandler(BaseHandler):
             self.finish()
     
 
-class GriveAccessToGroupHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GriveAccessToGroupHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -374,11 +322,7 @@ class GriveAccessToGroupHandler(BaseHandler):
             self.finish()
 
 
-class RemoveAccessFromGroupHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class RemoveAccessFromGroupHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -404,13 +348,8 @@ class RemoveAccessFromGroupHandler(BaseHandler):
             self.finish()
 
 
-class LoginHandler(BaseHandler):
+class LoginHandler(BaseDBHandler):
     """ Check if user and password exist and returns token"""
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-
     def post(self):
         input_str = self.request.body.decode("utf-8")
         input_data = json.loads(input_str)
@@ -434,15 +373,7 @@ class LoginHandler(BaseHandler):
             print("failed to authenticate user")
         self.write(json.dumps(result_object))
 
-class AuthenticateHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class AuthenticateHandler(BaseDBHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
         input_data = json.loads(input_str)

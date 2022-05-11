@@ -29,3 +29,10 @@ class BaseHandler(tornado.web.RequestHandler):
         error_string = "GET request not implemented. Use POST instead."
         print(error_string)
         self.write(error_string)
+
+class BaseDBHandler(tornado.web.RequestHandler):
+    def __init__(self, application, request, **kwargs):
+        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
+        self.app = application
+        self.db_path = self.app.db_path
+        self.motion_database = self.app.motion_database

@@ -25,16 +25,11 @@ import tornado.web
 import requests
 import subprocess
 from multiprocessing import Process
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 from motion_database_server.kubernetes_interface import start_kube_job, stop_kube_job
 
 
-class StartClusterJobHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class StartClusterJobHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -65,12 +60,7 @@ class StartClusterJobHandler(BaseHandler):
             self.finish()
 
 
-class StartMGServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class StartMGServerHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -96,11 +86,7 @@ class StartMGServerHandler(BaseHandler):
 
 
 
-class StartJobHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class StartJobHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -141,11 +127,7 @@ class StartJobHandler(BaseHandler):
         finally:
             self.finish()
 
-class GetJobServerListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class GetJobServerListHandler(BaseDBHandler):
     def get(self):
         print("get servers")
         server_registry_copy = list()
@@ -159,11 +141,7 @@ class GetJobServerListHandler(BaseHandler):
         response = json.dumps(server_registry_copy)
         self.write(response)
 
-class RegisterJobServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class RegisterJobServerHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -201,11 +179,7 @@ class RegisterJobServerHandler(BaseHandler):
             self.finish()
 
 
-class UnregisterJobServerHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-
+class UnregisterJobServerHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:

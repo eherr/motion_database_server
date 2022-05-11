@@ -4,15 +4,9 @@ import bson
 import bz2
 import tornado.web
 from motion_database_server.utils import get_bvh_string
-from motion_database_server.base_handler import BaseHandler
+from motion_database_server.base_handler import BaseDBHandler
 
-class GetModelListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-
+class GetModelListHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -40,11 +34,7 @@ class GetModelListHandler(BaseHandler):
 
 
 
-class UploadMotionModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
+class UploadMotionModelHandler(BaseDBHandler):
 
     @tornado.gen.coroutine
     def post(self):
@@ -76,12 +66,7 @@ class UploadMotionModelHandler(BaseHandler):
 
 
 
-class DeleteModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class DeleteModelHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -105,11 +90,7 @@ class DeleteModelHandler(BaseHandler):
         finally:
             self.finish()
 
-class UploadClusterTreeHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
+class UploadClusterTreeHandler(BaseDBHandler):
 
     @tornado.gen.coroutine
     def post(self):
@@ -140,12 +121,7 @@ class UploadClusterTreeHandler(BaseHandler):
             self.finish()
 
 
-class DownloadMotionModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
+class DownloadMotionModelHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -167,7 +143,7 @@ class DownloadMotionModelHandler(BaseHandler):
             self.finish()
 
 
-class DownloadClusterTreeHandler(BaseHandler):
+class DownloadClusterTreeHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -192,7 +168,7 @@ class DownloadClusterTreeHandler(BaseHandler):
             self.finish()
 
 
-class DownloadMotionPrimitiveSampleHandler(BaseHandler):
+class DownloadMotionPrimitiveSampleHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -218,7 +194,7 @@ class DownloadMotionPrimitiveSampleHandler(BaseHandler):
             self.finish()
 
 
-class SampleToBVHHandler(BaseHandler):
+class SampleToBVHHandler(BaseDBHandler):
     """Handles HTTP POST Requests to a registered server url."""
 
     def __init__(self, application, request, **kwargs):
@@ -247,7 +223,7 @@ class SampleToBVHHandler(BaseHandler):
             self.write(error_msg)
 
 
-class GetSampleHandler(BaseHandler):
+class GetSampleHandler(BaseDBHandler):
     """Handles HTTP POST Requests to a registered server url."""
 
     def __init__(self, application, request, **kwargs):
@@ -265,7 +241,7 @@ class GetSampleHandler(BaseHandler):
         self.write(bson.dumps(result_object))
 
 
-class GetGraphListHandler(BaseHandler):
+class GetGraphListHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -292,7 +268,7 @@ class GetGraphListHandler(BaseHandler):
         finally:
             self.finish()
 
-class UploadGraphHandler(BaseHandler):
+class UploadGraphHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -329,7 +305,7 @@ class UploadGraphHandler(BaseHandler):
         finally:
             self.finish()
 
-class ReplaceGraphHandler(BaseHandler):
+class ReplaceGraphHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -360,7 +336,7 @@ class ReplaceGraphHandler(BaseHandler):
             self.finish()
 
 
-class DownloadGraphHandler(BaseHandler):
+class DownloadGraphHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
@@ -392,7 +368,7 @@ class DownloadGraphHandler(BaseHandler):
             self.finish()
 
 
-class RemoveGraphHandler(BaseHandler):
+class RemoveGraphHandler(BaseDBHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
