@@ -384,31 +384,22 @@ class GetMotionListHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             print(input_str)
             input_data = json.loads(input_str)
-            skeleton_name = ""
-            if "skeleton" in input_data:
-                skeleton_name = input_data["skeleton"]
+            motions = []
+            skeleton_name = input_data.get("skeleton","")
+            collection_id = None
             if "collection" in input_data:
-                collection = input_data["collection"]
-                is_processed = 0
-                if "is_processed" in input_data:
-                    is_processed = input_data["is_processed"]
-                if is_processed:
-                    motions = self.motion_database.get_preprocessed_data_list_by_collection(collection, skeleton_name)
-                else:
-                    motions = self.motion_database.get_motion_list_by_collection(collection, skeleton_name)
-                motions_str = json.dumps(motions)
-                self.write(motions_str)
-            if "collection_id" in input_data:
                 collection_id = input_data["collection_id"]
-                is_processed = 0
-                if "is_processed" in input_data:
-                    is_processed = input_data["is_processed"]
+            elif "collection_id" in input_data:
+                collection_id = input_data["collection_id"]
+            if collection_id is not None:
+                is_processed = input_data.get("is_processed", 0)
                 if is_processed:
                     motions = self.motion_database.get_preprocessed_data_list_by_collection(collection_id, skeleton_name)
                 else:
                     motions = self.motion_database.get_motion_list_by_collection(collection_id, skeleton_name)
-                motions_str = json.dumps(motions)
-                self.write(motions_str)
+                    
+            motions_str = json.dumps(motions)
+            self.write(motions_str)
 
         except Exception as e:
             print("caught exception in get")
