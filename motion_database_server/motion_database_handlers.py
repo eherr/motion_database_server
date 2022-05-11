@@ -26,13 +26,12 @@ import numpy as np
 import json
 import bson
 import bz2
-import threading
 import subprocess
 from multiprocessing import Process
 import tornado.web
-from motion_database_server.motion_database import  get_bvh_string
-from anim_utils.animation_data import BVHReader, MotionVector, BVHWriter
-from motion_database_server.kubernetes_interface import load_kube_config, start_kube_job, stop_kube_job
+from motion_database_server.utils import get_bvh_string
+from anim_utils.animation_data import MotionVector
+from motion_database_server.kubernetes_interface import start_kube_job, stop_kube_job
 from motion_database_server.base_handler import BaseHandler
 
 DEFAULT_SKELETON = "custom"

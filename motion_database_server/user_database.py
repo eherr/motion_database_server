@@ -53,11 +53,10 @@ TABLES["users"] = [("name",TEXT_T),
 
 
 class UserDatabase(DatabaseWrapper):
+    user_table = "users"
+    groups_table = "user_groups"
     def __init__(self, server_secret=None):
         self.table_descs = TABLES
-        self.user_table = "users"
-        self.groups_table = "groups"
-        self.smtp_server_port = 1025
         self.enforce_access_rights = server_secret is not None
         self.jwt = jwt.JWT()
         if server_secret is not None:

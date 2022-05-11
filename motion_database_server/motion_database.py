@@ -26,14 +26,13 @@ import bson
 import bz2
 import base64
 import numpy as np
-import pandas as pd
+from motion_database_server.utils import get_bvh_from_str, extract_compressed_bson, get_bvh_string
 from motion_database_server.user_database import UserDatabase
-from anim_utils.animation_data.bvh import BVHReader, BVHWriter
+from motion_database_server.skeleton_database import SkeletonDatabase
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from anim_utils.animation_data.motion_vector import MotionVector
 from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiveModelWrapper
 from morphablegraphs.utilities import convert_to_mgrd_skeleton
-import hashlib
 import jwt
 JWT_ALGORITHM = 'HS256'
 
@@ -65,30 +64,6 @@ def convert_to_small_dict(motion_dict):
     return small_dict
 
 
-def get_bvh_string(skeleton, frames):
-    print("generate bvh string", len(skeleton.animated_joints))
-    frames = np.array(frames)
-    frames = skeleton.add_fixed_joint_parameters_to_motion(frames)
-    frame_time = skeleton.frame_time
-    bvh_writer = BVHWriter(None, skeleton, frames, frame_time, True)
-    return bvh_writer.generate_bvh_string()
-
-def get_bvh_from_str(bvh_str):
-    bvh_reader = BVHReader("")
-    lines = bvh_str.split('\\n')
-    lines = [l for l in lines if len(l) > 0]
-    bvh_reader.process_lines(lines)
-    return bvh_reader
-
-
-def extract_compressed_bson(data):
-    try:
-        data = bson.loads(bz2.decompress(data))
-    except:
-        data = bson.loads(data)
-        print("Warning: data was not compressed")
-        pass
-    return data
 
 INT_T = "INTERGER"
 BLOB_T = "BLOB"
@@ -158,16 +133,13 @@ TABLES2["user_groups"] = [("name",TEXT_T), # need to be unique
                      ("users",TEXT_T)]   #  list of user ids 
 
                     
-class MotionDatabase(UserDatabase):
+class MotionDatabase(UserDatabase, SkeletonDatabase):
+    collections_table = "collections"
+    motion_table = "motion_clips"
+    preprocessed_table = "preprocessed_data"
+    model_table = "models"
+    graph_table = "graphs"
     def __init__(self, server_secret=None, data_dir="data"):
-        self.collections_table = "collections"
-        self.skeleton_table = "skeletons"
-        self.motion_table = "motion_clips"
-        self.preprocessed_table = "preprocessed_data"
-        self.model_table = "models"
-        self.graph_table = "graphs"
-        self.user_table = "users"
-        self.groups_table = "user_groups"
         self.character_dir = data_dir + os.sep +"characters"
         self.existing_collections = []
         self.upload_buffer = dict()
@@ -286,23 +258,6 @@ class MotionDatabase(UserDatabase):
                 records = [[graph_name,skeleton_name, data]]
                 self.insert_records(self.graph_table, ["name","skeleton","data"], records)
             
-
-
-    def load_skeleton(self, skeleton_name):
-        data, skeleton_model = self.get_skeleton_by_name(skeleton_name)
-        if data is not None:
-            data = extract_compressed_bson(data)
-            #print("load default", len(data["referencePose"]["rotations"]))
-            skeleton = SkeletonBuilder().load_from_custom_unity_format(data, add_extra_end_site=False)
-        
-        if skeleton_model is not None:
-            try:
-                skeleton_model = bz2.decompress(skeleton_model)
-                skeleton_model = bson.loads(skeleton_model)
-                skeleton.skeleton_model = skeleton_model
-            except Exception as e:
-                print("Could not load skeleton model", e.args)
-        return skeleton
 
     def import_skeleton(self,other, skeleton_name):
         skeleton = other.load_skeleton_legacy(skeleton_name)
@@ -510,31 +465,6 @@ class MotionDatabase(UserDatabase):
             data["metaData"] = meta_data
         self.update_entry(self.motion_table, data, "ID", m_id)
 
-    def add_new_skeleton(self, name, data=b"x00", meta_data=b"x00", owner=1):
-        skeleton_list = self.get_name_list(self.skeleton_table)
-        if name != "" and name not in skeleton_list.values:
-            records = [(name, data, meta_data, owner)]
-            self.insert_records(self.skeleton_table, ["name", "data", "metaData", "owner"], records)
-            self.skeletons[name] = self.load_skeleton(name)
-            return True
-        else:
-            print("Error: skeleton already exists")
-            return False
-
-    def replace_skeleton(self, name, skeleton_data=b"x00", meta_data=b"x00"):
-        print("replace skeleton", name)
-        if name != "":
-            data = dict()
-            if name != "":
-                data["name"] = name
-            if skeleton_data != b"x00":
-                data["data"] = skeleton_data
-            if meta_data != b"x00":
-                data["metaData"] = meta_data
-            self.update_entry(self.skeleton_table, data, "name", name)
-            print("load skeleton")
-            self.skeletons[name] = self.load_skeleton(name)
-
     def get_preprocessed_data_by_id(self, m_id):
         r = self.query_table(self.preprocessed_table, ["data", "metaData", "skeleton"], [("ID",m_id)])
         data = None
@@ -595,16 +525,6 @@ class MotionDatabase(UserDatabase):
         if "public" in input_data:
             data["public"] = input_data["public"]
         self.update_entry(self.collections_table, data, "id", collection_id)
-    
-    def get_skeleton_by_name(self, name):
-        records = self.query_table(self.skeleton_table,[ "data", "metaData"], [("name", name)])
-        #recordsrecords = self.get_skeleton_by_name(skeleton_table, name)
-        data = None
-        meta_data = None
-        if len(records) > 0:
-            data = records[0][0]
-            meta_data = records[0][1]
-        return data, meta_data
 
     def get_motion_list_by_collection(self, collection, skeleton=""):
         filter_conditions =[("collection",str(collection))]
@@ -670,11 +590,6 @@ class MotionDatabase(UserDatabase):
     def remove_graph_by_id(self, graph_id):
         return self.delete_entry_by_id(self.graph_table, graph_id)
 
-    def get_skeleton_list(self):
-        r = self.query_table(self.skeleton_table, ["ID","name", "owner"], [])
-        return r
-
-
     def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, base64_data_str, meta_data, is_processed=False):
         print("upload motion", name)
         if name not in self.upload_buffer:
@@ -708,12 +623,6 @@ class MotionDatabase(UserDatabase):
         motion_vector.from_bvh_reader(bvh_reader, False)
         motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
         return motion_vector
-
-    def load_skeleton_from_bvh_str(self, bvh_str):
-        bvh_reader = get_bvh_from_str(bvh_str)
-        animated_joints = list(bvh_reader.get_animated_joints())
-        skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
-        return skeleton
 
     def upload_bvh_clip(self, collection, skeleton_name, name, bvh_str):
         motion_vector = self.load_motion_vector_from_bvh_str(bvh_str)
@@ -825,14 +734,6 @@ class MotionDatabase(UserDatabase):
         motion_vector.skeleton = self.skeletons[skeleton_type]
         return motion_vector, skeleton_type
 
-
-    def get_skeleton(self, skeleton_type):
-        if skeleton_type in self.skeletons:
-            return self.skeletons[skeleton_type]
-        else:
-            return None
-
-
     def get_motion_list_by_collection_legacy(self, collection, skeleton=""):
         filter_conditions =[("collection",str(collection))]
         if skeleton != "":
@@ -840,27 +741,6 @@ class MotionDatabase(UserDatabase):
         r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
         return r
         
-    def load_skeleton_legacy(self, skeleton_name):
-        skeleton = None
-        bvh_str, skeleton_model = self.get_skeleton_by_name_legacy(skeleton_name)
-
-        ref_bvh = get_bvh_from_str(bvh_str)
-        animated_joints = list(ref_bvh.get_animated_joints())
-        n_joints = len(animated_joints)
-        print("animated joints", len(animated_joints))
-        if n_joints > 0:
-            skeleton = SkeletonBuilder().load_from_bvh(ref_bvh, animated_joints, skeleton_model=skeleton_model)
-        return skeleton
-
-    def get_skeleton_by_name_legacy(self, name):
-        records = self.query_table(self.skeleton_table,[ "BVHString", "model"], [("name", name)])
-        #recordsrecords = self.get_skeleton_by_name(skeleton_table, name)
-        bvh_str = ""
-        model_str = ""
-        if len(records) > 0:
-            bvh_str = records[0][0]
-            model_str = records[0][1]
-        return bvh_str, model_str
 
     def get_motion_by_id_legacy(self, m_id):
         filter_conditions = [("ID",m_id)]
