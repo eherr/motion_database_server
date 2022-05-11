@@ -34,7 +34,7 @@ from anim_utils.animation_data import MotionVector
 from motion_database_server.kubernetes_interface import start_kube_job, stop_kube_job
 from motion_database_server.base_handler import BaseHandler
 
-DEFAULT_SKELETON = "custom"
+
 USER_ROLE_ADMIN = "admin"
 
 class GetMotionHandler(BaseHandler):
@@ -160,60 +160,6 @@ class AuthenticateHandler(BaseHandler):
         else:
             print("failed to authenticate user")
         self.write(json.dumps(result_object))
-
-class GetSkeletonHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    def post(self):
-        input_str = self.request.body.decode("utf-8")
-        input_data = json.loads(input_str)
-        
-        skeleton_name = DEFAULT_SKELETON # default skeleton
-        if "skeleton_type" in input_data:
-            skeleton_name = input_data["skeleton_type"]
-        elif "skeleton_name" in input_data:
-            skeleton_name = input_data["skeleton_name"]
-        print("get skeleton", skeleton_name)
-        skeleton = self.motion_database.get_skeleton(skeleton_name)
-        if skeleton is not None:
-            result_object = skeleton.to_unity_format()
-            result_object["name"] = skeleton_name
-            self.write(json.dumps(result_object))
-        else:
-            print("Error: Could not find skeleton ", skeleton_name)
-            self.write("Error")
-
-class GetSkeletonModelHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    def post(self):
-        input_str = self.request.body.decode("utf-8")
-        input_data = json.loads(input_str)
-        skeleton_name = DEFAULT_SKELETON # default skeleton
-        if "skeleton_type" in input_data:
-            skeleton_name = input_data["skeleton_type"]
-        elif "skeleton_name" in input_data:
-            skeleton_name = input_data["skeleton_name"]
-        if skeleton_name is not None:
-            skeleton = self.motion_database.get_skeleton(skeleton_name)
-            result_object = skeleton.skeleton_model
-            self.write(json.dumps(result_object))
-        else:
-            print("Error: Could not find skeleton ", skeleton_name)
-            self.write("Error")
-
 
 
 class UploadMotionModelHandler(BaseHandler):
@@ -791,26 +737,6 @@ class GetMotionListHandler(BaseHandler):
             self.finish()
 
 
-        
-class GetSkeletonListHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            skeletons = self.motion_database.get_skeleton_list()
-            skeletons_str = json.dumps(skeletons)
-            self.write(skeletons_str)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
 class GetModelListHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
@@ -1042,142 +968,7 @@ class RemoveCollectionHandler(BaseHandler):
             self.write("Caught an exception: %s" % e)
             raise
         finally:
-            self.finish()
-            
-
-class NewSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            success = False
-            if "name" in input_data and "data" in input_data and "token" in input_data:
-                token = input_data["token"]
-                request_user_id = self.app.motion_database.get_user_id_from_token(token)
-                if request_user_id > -1:
-                    data = None
-                    if "data_type" in input_data and input_data["data_type"] == "bvh":
-                        skeleton = self.motion_database.load_skeleton_from_bvh_str(input_data["data"])
-                        data = bson.dumps(skeleton.to_unity_format(animated_joints=skeleton.animated_joints))
-                        data = bz2.compress(data)
-                    else:
-                        data = bson.dumps(json.loads(input_data["data"]))
-                        data = bz2.compress(data)
-                    
-                    meta_data = b"x00"
-                    if "meta_data" in input_data:
-                        meta_data = bson.dumps(json.loads(input_data["meta_data"]))
-                        meta_data = bz2.compress(meta_data)
-                    if data is not None:
-                        success = self.motion_database.add_new_skeleton(input_data["name"], data, meta_data, request_user_id)
-                else:
-                    print("Error: not all parameters were provided to create a skeleton entry")
-            else:
-                print("Error: Not enough access rights")
-            data = dict()
-            data["success"] = success
-            self.write(json.dumps(data))
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class ReplaceSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            success = False
-            if "name" in input_data and "token" in input_data:
-                skeleton_name = input_data["name"]
-                token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_skeleton(skeleton_name)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                user_role = self.app.motion_database.get_user_role(request_user_id)
-                if request_user_id == owner_id or user_role.lower() == "admin":
-                    data = b"x00"
-                    meta_data = b"x00"
-                    if "data" in input_data:
-                        data = json.loads(input_data["data"])
-                        data = bson.dumps(data)
-                        data = bz2.compress(data)
-                    if "meta_data" in input_data:
-                        meta_data = bson.dumps(json.loads(input_data["meta_data"]))
-                        meta_data = bz2.compress(meta_data)
-                    if data != b"x00" or meta_data != b"x00":
-                        self.motion_database.replace_skeleton(skeleton_name, data, meta_data)
-                        success = True
-                else:
-                    print("Error: not enough access rights to modify skeleton entry")
-            else:
-                print("Error: not all parameters were provided to modify a skeleton entry")
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class RemoveSkeletonHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = self.app.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            success = False
-            input_data = json.loads(input_str)
-            if "name" in input_data and "token" in input_data:
-                skeleton_name = input_data["name"]
-                token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_skeleton(skeleton_name)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                user_role = self.app.motion_database.get_user_role(request_user_id)
-                if request_user_id == owner_id or user_role.lower() == "admin":
-                    self.motion_database.remove_skeleton(skeleton_name)
-                    success = True
-                else:
-                    print("Error: not enough access rights to delete skeleton entry")
-            else:
-                print("Error: not all parameters were provided to delete skeleton entry")
-            
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
+            self.finish()      
 
 
 class GetGraphListHandler(BaseHandler):
@@ -1407,117 +1198,6 @@ class StartClusterJobHandler(BaseHandler):
         finally:
             self.finish()
 
-
-class UploadCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
-            success = False
-            if has_access:
-                if "name" in input_data and "skeleton_type" in input_data and "data" in input_data:
-                    name = input_data['name']
-                    skeleton_type = input_data['skeleton_type'] 
-                    data = input_data['data']
-                    data = bytearray(data) # https://www.w3resource.com/python-exercises/python-basic-exercise-118.php
-                    success = self.motion_database.store_character_model(name, skeleton_type, data)
-                else:
-                    print("Error: Not all parameters provided")
-            else:
-                print("Error: Not enough access rights")
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-        except Exception as e:
-            print("caught exception in %s", e)
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class DeleteCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        print("Post method for deleting GLB file from server")
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_json = json.loads(input_str)
-            name = input_json['name']
-            skeleton_type = input_json['skeleton_type'] 
-            self.motion_database.delete_character_model(name, skeleton_type)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class DownloadCharacterModelHandler(BaseHandler):
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        print("Post method for binary file loading")
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_json = json.loads(input_str)
-            name = input_json['name']
-            skeleton_type = input_json['skeleton_type'] 
-            data = self.motion_database.get_character_model_data(name, skeleton_type)
-            if data is not None:
-                self.write(data)
-            else:
-                print("Error: could not read file")
-        except Exception as e:
-            print("caught exception in post")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class GetCharacterModelListHandler(BaseHandler):
-    """Handles HTTP POST Requests to a registered server url."""
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(
-            self, application, request, **kwargs)
-        self.app = application
-        self.motion_database = application.motion_database
-
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_json = json.loads(input_str)
-            skeleton_type = input_json['skeleton_type']
-            characters = self.motion_database.get_character_model_list(skeleton_type)
-            characters_str = json.dumps(characters)
-            self.write(characters_str)
-        except Exception as e:
-            print("caught exception in post method")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
 class GetCollectionsByNameHandler(BaseHandler):
     """Handles HTTP POST Requests to a registered server url."""
 
@@ -1588,14 +1268,11 @@ class GetMotionListByNameHandler(BaseHandler):
 
 
 MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
-                            (r"/get_skeleton_list", GetSkeletonListHandler),
                             (r"/get_model_list", GetModelListHandler),
                             (r"/get_collection_list", GetCollectionListHandler),
                             (r"/get_graph_list", GetGraphListHandler),
                             (r"/get_motion", GetMotionHandler),
                             (r"/get_motion_info", GetMotionInfoHandler),
-                            (r"/get_skeleton", GetSkeletonHandler),
-                            (r"/get_skeleton_model", GetSkeletonModelHandler),
                             (r"/download_bvh", DownloadBVHHandler), 
                             (r"/download_sample_as_bvh", DownloadSampleHandler), 
                             (r"/download_motion_model", DownloadMotionModelHandler),
@@ -1609,11 +1286,8 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/delete_motion", DeleteMotionHandler),
                             (r"/create_new_collection", NewCollectionHandler),
                             (r"/remove_collection", RemoveCollectionHandler),
-                            (r"/create_new_skeleton", NewSkeletonHandler),
-                            (r"/replace_skeleton", ReplaceSkeletonHandler),
                             (r"/upload_motion_model", UploadMotionModelHandler),
                             (r"/delete_model", DeleteModelHandler),
-                            (r"/remove_skeleton", RemoveSkeletonHandler),
                             (r"/upload_cluster_tree", UploadClusterTreeHandler),
                             (r"/upload_graph", UploadGraphHandler),
                             (r"/replace_graph", ReplaceGraphHandler),
@@ -1626,10 +1300,6 @@ MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
                             (r"/start_cluster_job", StartClusterJobHandler),
                             (r"/get_meta_data", GetMetaHandler),
                             (r"/authenticate", AuthenticateHandler),
-                            (r"/get_character_model_list", GetCharacterModelListHandler),
-                            (r"/upload_character_model", UploadCharacterModelHandler),
-                            (r"/delete_character_model", DeleteCharacterModelHandler),
-                            (r"/download_character_model", DownloadCharacterModelHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
                             (r"/get_motion_list_by_name", GetMotionListByNameHandler),
                             (r"/get_collection_tree", GetCollectionTreeHandler)]
