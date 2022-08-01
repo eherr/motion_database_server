@@ -21,17 +21,13 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import os
 import json
-import threading
-import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
 import requests
 from motion_database_server.motion_database import MotionDatabase
 from motion_database_server.kubernetes_interface import load_kube_config
-from motion_database_server.base_handler import BaseHandler, BaseDBHandler
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
@@ -39,100 +35,36 @@ from motion_database_server.mg_model_handlers import MG_MODEL_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
 from motion_database_server.job_server_handlers import JOB_SERVER_HANDLER_LIST
 
+class ServiceBase:
+    service_name = str
+    request_handler_list : list
+    route : str
 
-class CustomStaticFileHander(tornado.web.StaticFileHandler):
-    def set_default_headers(self):
-        self.set_header("Access-Control-Allow-Origin", "*")
-
-
-class IndexHandler(BaseHandler):
-    """ HTTP handler to serve the main web page """
-
-    def __init__(self, application, request, **kwargs):
-        tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application
-        self.enable_editing = False
-        self.motion_database = self.app.motion_database
-        self.path_prefix = "./"
-        if self.app.activate_port_forwarding:
-            self.path_prefix = str(self.app.port)
-
-    def get(self):
-        self.render("index.html", path_prefix=self.path_prefix, 
-                    enable_editing=self.enable_editing,
-                    app_server_port=str(self.app.port),
-                    app_server_activate_port_forwarding=self.app.activate_port_forwarding,
-                    app_server_enable_download=self.app.enable_download
-                    )
-
-
-class GetMetaHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
-                             activate_port_forwarding=self.app.activate_port_forwarding,
-                             enable_download=self.app.enable_download)
-
-        self.write(json.dumps(result_object))
-
-
-class DBApplicationServer(tornado.web.Application):
-    """ Wrapper for the MotionDatabase class that starts the Tornado Webserver
+class MotionDatabaseService(ServiceBase):
+    """ Wrapper for the MotionDatabase class that can be registered as a service
     """
+    service_name = "MOTION_DB"
     def __init__(self, **kwargs):
-        self.port = kwargs.get("port", 8888)
-        self.root_path = kwargs.get("root_path", r"./public")
         self.db_path = kwargs.get("db_path", r"./motion.db")
-        server_secret = kwargs.get("server_secret", None)
-        self.motion_database = MotionDatabase(server_secret)
-        self.motion_database.connect(self.db_path)
+        self.server_secret = kwargs.get("server_secret", None)
         self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
-        self.enable_download = kwargs.get("enable_download", False)
-        self.ssl_options = kwargs.get("ssl_options", None)
+        self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
         kube_config = kwargs.get("kube_config", None)
         if kube_config is not None:
             load_kube_config(kube_config["config_file"])
             self.k8s_namespace = kube_config["namespace"]
         else:
             self.k8s_namespace = ""
-        request_handler_list = [(r"/", IndexHandler),
-                            (r"/get_meta_data", GetMetaHandler)]
-        request_handler_list += USER_DB_HANDLER_LIST
-        request_handler_list += SKELETON_DB_HANDLER_LIST
-        request_handler_list += MOTION_DB_HANDLER_LIST
-        request_handler_list += MG_MODEL_HANDLER_LIST
-        request_handler_list += CHARACTER_HANDLER_LIST
-        request_handler_list += JOB_SERVER_HANDLER_LIST
-
-        request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]
-        template_path = os.path.join(os.path.dirname(__file__), "..", "templates")
-        settings = dict(template_path=template_path)
-        tornado.web.Application.__init__(self, request_handler_list, "", None, **settings)
+        self.motion_database = MotionDatabase(self.server_secret)
+        self.motion_database.connect(self.db_path)
+        self.request_handler_list = []
+        self.request_handler_list += USER_DB_HANDLER_LIST
+        self.request_handler_list += SKELETON_DB_HANDLER_LIST
+        self.request_handler_list += MOTION_DB_HANDLER_LIST
+        self.request_handler_list += MG_MODEL_HANDLER_LIST
+        self.request_handler_list += CHARACTER_HANDLER_LIST
+        self.request_handler_list += JOB_SERVER_HANDLER_LIST
         self.server_registry = dict()
-        self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
-        self.idCounter = 0
-        self.mutex = threading.Lock()
-
-    def start(self):
-        print("Start Animation Database REST interface on port", self.port, self.ssl_options)
-        print("activate_port_forwarding", self.activate_port_forwarding)
-        #asyncio.set_event_loop(asyncio.new_event_loop())
-        try:
-            if self.ssl_options is not None:
-                self.listen(self.port, ssl_options=self.ssl_options)
-            else:
-                self.listen(self.port)
-            def check_keyboard_for_shutdown():
-                return
-            tornado.ioloop.PeriodicCallback(check_keyboard_for_shutdown, 1000).start()
-            tornado.ioloop.IOLoop.instance().start()
-        except KeyboardInterrupt:
-            print("Handle Keyboard Interrupt")
-            tornado.ioloop.IOLoop.instance().stop()
-
-    def stop(self):
-        print("stop")
-        tornado.ioloop.IOLoop.instance().stop()
 
     def get_server_status(self, name):
         result = dict()

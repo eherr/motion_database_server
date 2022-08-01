@@ -28,8 +28,7 @@ import tornado.httpserver
 import tornado.websocket
 import tornado.ioloop
 import tornado.web
-from motion_database_server.base_handler import BaseHandler, BaseDBHandler
-
+from motion_database_server.base_handler import BaseHandler
 class CustomStaticFileHander(tornado.web.StaticFileHandler):
     def set_default_headers(self):
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -55,7 +54,7 @@ class IndexHandler(BaseHandler):
                     )
 
 
-class GetMetaHandler(BaseDBHandler):
+class GetMetaHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
         result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
@@ -77,22 +76,25 @@ class WebAppServer(tornado.web.Application):
         self.ssl_options = kwargs.get("ssl_options", None)
         self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
 
-        self.request_handler_list = [(r"/", IndexHandler), (r"/get_meta_data", GetMetaHandler)]
-        self.request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]
+        self.request_handler_list = [(r"/", IndexHandler), (r"/get_meta_data", GetMetaHandler)]        
         self.service_contexts = dict()
+        self.idCounter = 0
+        self.mutex = threading.Lock()
+
 
     def get_service_context(self, service_name):
         return self.service_contexts[service_name]
 
     def register_service(self, service_name, service_context):
         self.service_contexts[service_name] = service_context
-        self.request_handler_list += service_context.get_handler_list()
+        self.request_handler_list += service_context.request_handler_list
 
     def start(self):
         settings = dict(template_path=os.path.join(os.path.dirname(__file__), "..", "templates"))
+        
+        self.request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]  # NEEDS TO BE AT THE END
         tornado.web.Application.__init__(self, self.request_handler_list, "", None, **settings)
-        self.idCounter = 0
-        self.mutex = threading.Lock()
+
         print("Start Tornado REST interface on port", self.port, self.ssl_options)
         for k in self.service_contexts:
             print("starting service", k)
