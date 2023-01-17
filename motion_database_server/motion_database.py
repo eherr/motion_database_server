@@ -89,14 +89,16 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
 
     def delete_files_of_entry(self, table_name, filter_conditions, data_cols):
         data_record = self.query_table(table_name, data_cols, filter_conditions)
-        for data_file_name in data_record[0]:
-            print(data_file_name)
+        if len(data_records) <1:
+            return
+        for data_file_name in data_cols:
             self.delete_data_file(table_name, data_file_name)
 
     def delete_entry_by_id(self, table_name, entry_id):
         filter_conditions = [("ID",entry_id)]
         data_cols = self.schema.get_data_cols(table_name)
-        self.delete_files_of_entry(table_name, filter_conditions, data_cols)
+        if len(data_cols) > 0:
+            self.delete_files_of_entry(table_name, filter_conditions, data_cols)
         super().delete_entry_by_id(table_name, entry_id)
     
 
