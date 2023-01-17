@@ -23,6 +23,7 @@
 
 import os
 from hashlib import sha512
+from datetime import datetime
 
 MAX_FILENAME_LENGTH = 40
 
@@ -38,17 +39,20 @@ class FileStorage:
         return hash_filename
 
     def generate_filename(self, data):
-        #salt = file_id.to_bytes(4, byteorder='big')
-        hash = sha512(data)
+        timestr = datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
+        salt = timestr.encode("utf-8")
+        hash = sha512(data+salt)
         hash_filename = hash.hexdigest()[:MAX_FILENAME_LENGTH]
         return hash_filename
 
-    def save_data_file(directory, name, data):
-        filename = directory+os.sep+name
+    def save_data_file(self, directory, name, data):
+        filename = self.data_dir + os.sep + directory+os.sep+name
         with open(filename, "wb") as file:
             file.write(data)
 
     def load_data_file(self, table_name, name):
+        if name is None:
+            return None
         filename = self.data_dir + os.sep + table_name + os.sep + name
         
         if not os.path.isfile(filename):
