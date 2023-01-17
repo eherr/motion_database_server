@@ -161,7 +161,7 @@ class DBSchema:
         self.tables = tables
 
     def get_data_cols(self, table_name):
-        return [k for k in DATA_COLS if k in self.tables[table_name]]
+        return [col[0] for col in self.tables[table_name] if col[0] in DATA_COLS]
 
     def create_tables(self, db):
         for t_name in self.tables:

@@ -72,7 +72,6 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
     def load_skeletons(self):
         self.skeletons = dict()
         for skel_id, skel_name, owner in self.get_skeleton_list():
-            print("add", skel_name)
             self.skeletons[skel_name] = self.load_skeleton(skel_name)
 
     def create_database(self, path):
@@ -90,14 +89,15 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
 
     def delete_files_of_entry(self, table_name, filter_conditions, data_cols):
         data_record = self.query_table(table_name, data_cols, filter_conditions)
-        for data_file_name in data_record:
+        for data_file_name in data_record[0]:
+            print(data_file_name)
             self.delete_data_file(table_name, data_file_name)
 
-    def delete_entry_by_id(self, table_name, enry_id):
-        filter_conditions = [("ID",enry_id)]
+    def delete_entry_by_id(self, table_name, entry_id):
+        filter_conditions = [("ID",entry_id)]
         data_cols = self.schema.get_data_cols(table_name)
         self.delete_files_of_entry(table_name, filter_conditions, data_cols)
-        super().delete_entry_by_id(table_name, enry_id)
+        super().delete_entry_by_id(table_name, entry_id)
     
 
     def get_collection_by_name(self, name, parent=-1, owner=-1, public=-1, exact_match=False):
