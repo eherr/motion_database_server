@@ -86,7 +86,6 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         else:
             self.connect_to_database(path)
 
-
     def delete_files_of_entry(self, table_name, filter_conditions, data_cols):
         data_record = self.query_table(table_name, data_cols, filter_conditions)
         if len(data_records) <1:
@@ -444,12 +443,11 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         if self.enforce_access_rights and "user" in session and "token" in session:
             token = session["token"]
             payload = self.jwt.decode(token, self.server_secret)
-            if "user_name" in payload:
-                return payload["user_name"] == session["user"]
+            if "username" in payload:
+                return payload["username"] == session["user"]
             else:
                 return False
         else:
-            print(session.keys())
             return not self.enforce_access_rights
     
 
