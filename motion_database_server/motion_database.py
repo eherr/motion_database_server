@@ -87,10 +87,10 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
             self.connect_to_database(path)
 
     def delete_files_of_entry(self, table_name, filter_conditions, data_cols):
-        data_record = self.query_table(table_name, data_cols, filter_conditions)
+        data_records = self.query_table(table_name, data_cols, filter_conditions)
         if len(data_records) <1:
             return
-        for data_file_name in data_cols:
+        for data_file_name in data_records[0]:
             self.delete_data_file(table_name, data_file_name)
 
     def delete_entry_by_id(self, table_name, entry_id):

@@ -62,6 +62,8 @@ class FileStorage:
         return data
 
     def delete_data_file(self, table_name, name):
+        if name is None:
+            return
         filename = self.data_dir + os.sep + table_name + os.sep + name
         if not os.path.isfile(filename):
             return
