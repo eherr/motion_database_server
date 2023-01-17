@@ -27,7 +27,8 @@ from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 
 class SkeletonDatabase(object):
     skeleton_table ="skeletons"
-
+    def __init__(self) -> None:
+        self.skeletons = dict()
     
     def load_skeleton(self, skeleton_name):
         data, skeleton_model = self.get_skeleton_by_name(skeleton_name)
@@ -61,8 +62,8 @@ class SkeletonDatabase(object):
         data = None
         meta_data = None
         if len(records) > 0:
-            data = records[0][0]
-            meta_data = records[0][1]
+            data = self.load_data_file(self.skeleton_table, records[0][0])
+            meta_data = self.load_data_file(self.skeleton_table, records[0][1])
         return data, meta_data
 
     def get_skeleton_list(self):
@@ -91,32 +92,10 @@ class SkeletonDatabase(object):
             if name != "":
                 data["name"] = name
             if skeleton_data != b"x00":
-                data["data"] = skeleton_data
+                data["data"] = self.save_hashed_file(self.skeleton_table, "data", skeleton_data) 
             if meta_data != b"x00":
-                data["metaData"] = meta_data
+                data["metaData"] = self.save_hashed_file(self.skeleton_table, "metaData", meta_data) 
             self.update_entry(self.skeleton_table, data, "name", name)
             print("load skeleton")
             self.skeletons[name] = self.load_skeleton(name)
 
-
-    def load_skeleton_legacy(self, skeleton_name):
-        skeleton = None
-        bvh_str, skeleton_model = self.get_skeleton_by_name_legacy(skeleton_name)
-
-        ref_bvh = get_bvh_from_str(bvh_str)
-        animated_joints = list(ref_bvh.get_animated_joints())
-        n_joints = len(animated_joints)
-        print("animated joints", len(animated_joints))
-        if n_joints > 0:
-            skeleton = SkeletonBuilder().load_from_bvh(ref_bvh, animated_joints, skeleton_model=skeleton_model)
-        return skeleton
-
-    def get_skeleton_by_name_legacy(self, name):
-        records = self.query_table(self.skeleton_table,[ "BVHString", "model"], [("name", name)])
-        #recordsrecords = self.get_skeleton_by_name(skeleton_table, name)
-        bvh_str = ""
-        model_str = ""
-        if len(records) > 0:
-            bvh_str = records[0][0]
-            model_str = records[0][1]
-        return bvh_str, model_str

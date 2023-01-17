@@ -57,6 +57,7 @@ class MotionDatabaseService(ServiceBase):
             self.k8s_namespace = ""
         self.motion_database = MotionDatabase(self.server_secret)
         self.motion_database.connect(self.db_path)
+        self.motion_database.load_skeletons()
         self.request_handler_list = []
         self.request_handler_list += USER_DB_HANDLER_LIST
         self.request_handler_list += SKELETON_DB_HANDLER_LIST

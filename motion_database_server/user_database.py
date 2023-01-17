@@ -406,3 +406,20 @@ Here is your new password:
         else:
             return ""
 
+    def get_user_access_rights(self, input_data):
+        # set public access
+        owner = -1
+        public = 1
+        # give access to collections owned by user
+        if "token" in input_data:
+            owner = self.get_user_id_from_token(input_data["token"])
+            role = self.get_user_role(owner)
+            # allow admin to specify custom filter
+            if role == "admin":
+                public = -1
+                owner = -1
+                if "public" in input_data:
+                    public = input_data["public"]
+                if "owner" in input_data:
+                    owner = input_data["owner"]
+        return owner, public
