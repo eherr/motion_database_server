@@ -20,15 +20,14 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database_server.tornado_app_server import TornadoAppServer
-from motion_database_server.motion_database_service import MotionDBService
+from motion_database_server.web_app_server import WebAppServer
+from motion_database_server.motion_database_service import MotionDatabaseService
 from motion_database_server.utils import load_json_file
 
 
 def main(config):
-    service = MotionDBService(**config)
-    server = TornadoAppServer(**config)
-    server.register_service(service.service_name, service)
+    server = WebAppServer(**config)
+    server.register_service(MotionDatabaseService.service_name, MotionDatabaseService(**config))
     server.start()
 
 
