@@ -100,7 +100,4 @@ class SkeletonDatabase(object):
             self.skeletons[name] = self.load_skeleton(name)
 
     def remove_skeleton(self, name):
-        filter_conditions = [("name",name)]
-        data_cols = self.tables[self.skeleton_table].get_data_cols()
-        self.delete_files_of_entry(self.skeleton_table, filter_conditions, data_cols)
-        self.delete_entry_by_name(self.skeleton_table, name)
+        self.tables[self.skeleton_table].delete_record_by_name(name)

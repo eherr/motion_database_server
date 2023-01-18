@@ -130,10 +130,15 @@ class Table():
 
     def delete_record_by_id(self, entry_id):
         filter_conditions = [("ID",entry_id)]
-        data_cols = self.get_data_cols()
-        if len(data_cols) > 0:
-            self.delete_files_of_entry(filter_conditions, data_cols)
+        if len(self.data_cols) > 0:
+            self.delete_files_of_entry(filter_conditions, self.data_cols)
         self.db.delete_entry_by_id(self.table_name, entry_id)
+
+    def delete_record_by_name(self, entry_name):
+        filter_conditions = [("name",entry_name)]
+        if len(self.data_cols) > 0:
+            self.delete_files_of_entry(filter_conditions, self.data_cols)
+        self.db.delete_entry_by_name(self.table_name, entry_name)
         
     def delete_files_of_entry(self, filter_conditions, data_cols):
         data_records = self.get_record_list(data_cols, filter_conditions)

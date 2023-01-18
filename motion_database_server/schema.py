@@ -154,14 +154,10 @@ TABLES3["meshes"] = [("name",TEXT_T),
                     ("data",TEXT_T)]
 
 
-DATA_COLS = ["data", "metaData"]
 
 class DBSchema:
     def __init__(self, tables):
         self.tables = tables
-
-    def get_data_cols(self, table_name):
-        return [col[0] for col in self.tables[table_name] if col[0] in DATA_COLS]
 
     def create_tables(self, db):
         for t_name in self.tables:
