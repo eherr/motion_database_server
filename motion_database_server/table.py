@@ -23,11 +23,16 @@
 
 DATA_COLS = ["data", "metaData"]
 
+"""
+Table interface that stores certain columns in the filesystem
+The database only has to store the filename.
+The filename is generated based on the hash and the date
+"""
 class Table():
-    def __init__(self, db, table_name, columns) -> None:
+    def __init__(self, db, table_name, columns, data_cols=DATA_COLS) -> None:
         self.table_name = table_name
         self.cols = [c[0] for c in columns]
-        self.data_cols = [c for c in self.cols if c in DATA_COLS]
+        self.data_cols = [c for c in self.cols if c in data_cols]
         self.db = db
 
     def search_records_by_name(self, name, cols=None, exact_match=False, filter_conditions=[]):
@@ -45,6 +50,8 @@ class Table():
         record = None
         if len(records) > 0:
             record = records[0]
+            col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+            record = self.read_data_columns(record, col_idx)
         return record
 
     def get_record_by_id(self, entry_id, cols=None):
@@ -55,35 +62,35 @@ class Table():
         record = None
         if len(records) > 0:
             record = records[0]
-            for i, c in enumerate(cols):
-                if c in self.data_cols:
-                    record[i] = self.db.load_data_file(self.table_name, record[i])
+            col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+            record = self.read_data_columns(record, col_idx)
         return record
 
-    def update_record(self, entry_id, input_data):
+    def read_data_columns(self, record, col_idx):
+        for i in col_idx:
+            record[i] = self.db.load_data_file(self.table_name, record[i])
+        return record
+
+    def write_data_columns(self, input_data):
         modified_data_cols = []
         data = dict()
         for key in self.cols:
             if key in input_data:
                 if key in self.data_cols:
-                    data[key] = self.save_hashed_file(self.table_name, key, input_data[key])
+                    filename = self.save_hashed_file(self.table_name, key, input_data[key])
+                    data[key] = filename
                     modified_data_cols.append(key)
                 else:
                     data[key] = input_data[key]
+        return data, modified_data_cols
+
+    def update_record(self, entry_id, input_data):
+        data, modified_data_cols = self.write_data_columns(input_data)
         self.delete_files_of_entry([("ID",entry_id)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "ID", entry_id)
 
     def update_record_by_name(self, entry_name, input_data):
-        modified_data_cols = []
-        data = dict()
-        for key in self.cols:
-            if key in input_data:
-                if key in self.data_cols:
-                    data[key] = self.save_hashed_file(self.table_name, key, input_data[key])
-                    modified_data_cols.append(key)
-                else:
-                    data[key] = input_data[key]
-               
+        data, modified_data_cols = self.write_data_columns(input_data)
         self.delete_files_of_entry([("name",entry_name)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "name", entry_name)
 
@@ -108,8 +115,12 @@ class Table():
     def get_record_list(self, cols=None, filter_conditions=[],intersection_list=[]):
         if cols is None:
             cols = self.cols
-        r = self.db.query_table(self.table_name, cols, filter_conditions,intersection_list)
-        return r
+        records = self.db.query_table(self.table_name, cols, filter_conditions,intersection_list)
+        data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+        if len(data_col_idx) > 0:
+            for i, r in enumerate(records):
+                records[i] = self.read_data_columns(r, data_col_idx)
+        return records
 
     def get_value_of_column_by_id(self, entry_id, col_name):
         value = None
