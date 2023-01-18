@@ -245,7 +245,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         filter_conditions = []
         if skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
-        return self.table[self.graph_table].get_record_list(["ID","name"], filter_conditions)
+        return self.tables[self.graph_table].get_record_list(["ID","name"], filter_conditions)
     
     def add_new_graph(self, name, skeleton, data):
         data = dict()
