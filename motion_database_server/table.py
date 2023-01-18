@@ -81,7 +81,7 @@ class Table():
         for key in self.cols:
             if key in input_data:
                 if key in self.data_cols:
-                    filename = self.save_hashed_file(self.table_name, key, input_data[key])
+                    filename = self.db.save_hashed_file(self.table_name, key, input_data[key])
                     data[key] = filename
                     modified_data_cols.append(key)
                 else:
@@ -105,8 +105,8 @@ class Table():
             if key in input_data:
                 col_value = input_data[key]
                 if key in self.data_cols:
-                    col_value = self.save_hashed_file(self.table_name, key, input_data[key])
-                col_keys.append(col_keys)
+                    col_value = self.db.save_hashed_file(self.table_name, key, col_value)
+                col_keys.append(key)
                 cols_values.append(col_value)
         records = [cols_values]
         self.db.insert_records(self.table_name, col_keys, records)

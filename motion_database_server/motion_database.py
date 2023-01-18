@@ -156,18 +156,18 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
 
 
     def replace_motion(self, m_id, collection, skeleton_name, name, motion_data, meta_data):
-        data = dict()
+        record_data = dict()
         if collection is not None:
-            data["collection"] = collection
+            record_data["collection"] = collection
         if skeleton_name is not None:
-            data["skeleton"] = skeleton_name
+            record_data["skeleton"] = skeleton_name
         if name is not None:
-            data["name"] = name
+            record_data["name"] = name
         if motion_data is not None:
-            data["data"] = motion_data
+            record_data["data"] = motion_data
         if meta_data is not None:
-            data["metaData"] = meta_data
-        self.tables[self.motion_table].update_record(m_id, data)
+            record_data["metaData"] = meta_data
+        self.tables[self.motion_table].update_record(m_id, record_data)
 
     def get_preprocessed_data_by_id(self, m_id):
         r = self.tables[self.preprocessed_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
@@ -195,18 +195,18 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         return data, cluster_tree_data, skeleton_name
 
     def replace_preprocessed_data(self, m_id, collection, skeleton_name, name, motion_data, meta_data):
-        data = dict()
+        record_data = dict()
         if collection != "":
-            data["collection"] = collection
+            record_data["collection"] = collection
         if skeleton_name != "":
-            data["skeleton"] = skeleton_name
+            record_data["skeleton"] = skeleton_name
         if name != "":
-            data["name"] = name
+            record_data["name"] = name
         if motion_data != "":
-            data["data"] = motion_data
+            record_data["data"] = motion_data
         if meta_data != "":
-            data["metaData"] = meta_data
-        self.tables[self.preprocessed_table].update_record(m_id, data)
+            record_data["metaData"] = meta_data
+        self.tables[self.preprocessed_table].update_record(m_id, record_data)
     
     def get_collection_by_id(self, collection_id):
         return self.tables[self.collections_table].get_record_by_id(collection_id,["ID","name","type", "parent"])
@@ -247,12 +247,12 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
             filter_conditions+=[("skeleton", skeleton)]
         return self.tables[self.graph_table].get_record_list(["ID","name"], filter_conditions)
     
-    def add_new_graph(self, name, skeleton, data):
-        data = dict()
-        data["name"] = name
-        data["skeleton"] = skeleton
-        data["data"] = data
-        return self.tables[self.graph_table].create_record(data)
+    def add_new_graph(self, name, skeleton, graph_data):
+        record_data = dict()
+        record_data["name"] = name
+        record_data["skeleton"] = skeleton
+        record_data["data"] = graph_data
+        return self.tables[self.graph_table].create_record(record_data)
 
     def replace_graph(self, graph_id, input_data):
         if "data" in input_data:
@@ -310,24 +310,24 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         data = bz2.compress(data)
         self.insert_motion(collection, skeleton_name, name, data, "", n_frames)
             
-    def insert_motion(self, collection, skeleton_name, name, data, meta_data, n_frames):
-        data = dict()
-        data["name"] = name
-        data["collection"] = collection
-        data["skeleton"] = skeleton_name
-        data["numFrames"] = n_frames
-        data["data"] = data
-        data["metaData"] = meta_data
-        return self.tables[self.motion_table].create_record(data)
+    def insert_motion(self, collection, skeleton_name, name, motion_data, meta_data, n_frames):
+        record_data = dict()
+        record_data["name"] = name
+        record_data["collection"] = collection
+        record_data["skeleton"] = skeleton_name
+        record_data["numFrames"] = n_frames
+        record_data["data"] = motion_data
+        record_data["metaData"] = meta_data
+        return self.tables[self.motion_table].create_record(record_data)
 
-    def insert_preprocessed_data(self, collection, skeleton_name, name, data, meta_data):
-        data = dict()
-        data["name"] = name
-        data["collection"] = collection
-        data["skeleton"] = skeleton_name
-        data["data"] = data
-        data["metaData"] = meta_data
-        return self.tables[self.preprocessed_table].create_record(data)
+    def insert_preprocessed_data(self, collection, skeleton_name, name, motion_data, meta_data):
+        record_data = dict()
+        record_data["name"] = name
+        record_data["collection"] = collection
+        record_data["skeleton"] = skeleton_name
+        record_data["data"] = motion_data
+        record_data["metaData"] = meta_data
+        return self.tables[self.preprocessed_table].create_record(record_data)
 
     def delete_motion_by_id(self, motion_id):
         return self.tables[self.motion_table].delete_record_by_id(motion_id)
@@ -337,29 +337,29 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
 
     def add_new_collection_by_id(self, name, collection_type, parent_id, owner, public=0):
         owner = max(0, owner)
-        data = dict()
-        data["name"] = name
-        data["type"] = collection_type
-        data["parent"] = parent_id
-        data["owner"] = owner
-        data["public"] = public
-        return self.tables[self.collections_table].create_record(data)
+        record_data = dict()
+        record_data["name"] = name
+        record_data["type"] = collection_type
+        record_data["parent"] = parent_id
+        record_data["owner"] = owner
+        record_data["public"] = public
+        return self.tables[self.collections_table].create_record(record_data)
 
     def remove_collection_by_id(self, collection_id):
         return self.tables[self.collections_table].delete_record_by_id(collection_id)
 
     def upload_motion_model(self, name, collection, skeleton, model_data):
-        data = dict()
-        data["name"] = name
-        data["collection"] = collection
-        data["skeleton"] = skeleton
-        data["data"] = model_data
-        return self.tables[self.model_table].create_record(data)
+        record_data = dict()
+        record_data["name"] = name
+        record_data["collection"] = collection
+        record_data["skeleton"] = skeleton
+        record_data["data"] = model_data
+        return self.tables[self.model_table].create_record(record_data)
 
     def upload_cluster_tree(self, model_id, cluster_tree_data):
-        data = dict()
-        data["metaData"] = cluster_tree_data
-        self.tables[self.model_table].update_record(model_id, data)
+        record_data = dict()
+        record_data["metaData"] = cluster_tree_data
+        self.tables[self.model_table].update_record(model_id, record_data)
 
     def delete_model_by_id(self, m_id):
         return self.tables[self.model_table].delete_record_by_id(m_id)
