@@ -53,7 +53,7 @@ class Table():
         records = self.db.query_table(self.table_name, cols,filter_conditions)
         record = None
         if len(records) > 0:
-            record = records[0]
+            record = list(records[0])
             col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
             record = self.read_data_columns(record, col_idx)
         return record
@@ -65,7 +65,7 @@ class Table():
         records = self.db.query_table(self.table_name, cols,filter_conditions)
         record = None
         if len(records) > 0:
-            record = records[0]
+            record = list(records[0])
             col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
             record = self.read_data_columns(record, col_idx)
         return record
@@ -123,7 +123,7 @@ class Table():
         data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
         if len(data_col_idx) > 0:
             for i, r in enumerate(records):
-                records[i] = self.read_data_columns(r, data_col_idx)
+                records[i] = self.read_data_columns(list(r), data_col_idx)
         return records
 
     def get_value_of_column_by_id(self, entry_id, col_name):

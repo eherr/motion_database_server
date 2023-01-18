@@ -55,7 +55,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         self.upload_buffer = UploadBuffer()
         self.tables = dict()
         for name in self.schema.tables:
-            self.tables[name] = Table(self, name, self.schema[name])
+            self.tables[name] = Table(self, name, self.schema.tables[name])
         
         SkeletonDatabase.__init__(self)
         self._mp_buffer = dict()
@@ -75,7 +75,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
     
     def load_skeletons(self):
         self.skeletons = dict()
-        for skel_name in self.tables["skeletons"].get_record_list(["name"]):
+        for skel_name, in self.tables["skeletons"].get_record_list(["name"]): 
             self.skeletons[skel_name] = self.load_skeleton(skel_name)
 
     def create_database(self, path):

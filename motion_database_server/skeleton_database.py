@@ -62,8 +62,8 @@ class SkeletonDatabase(object):
         data = None
         meta_data = None
         if record is not None:
-            data = self.load_data_file(self.skeleton_table, record[0])
-            meta_data = self.load_data_file(self.skeleton_table, record[1])
+            data = record[0]
+            meta_data =record[1]
         return data, meta_data
 
     def get_skeleton_list(self):
