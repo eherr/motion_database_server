@@ -39,8 +39,12 @@ class Table():
         if cols is None:
             cols = self.cols
         filter_conditions += [("name", name, exact_match)]
-        collection_records = self.db.query_table(self.table_name, cols, filter_conditions, None)
-        return collection_records
+        records = self.db.query_table(self.table_name, cols, filter_conditions, None)
+        data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+        if len(data_col_idx) > 0:
+            for i, r in enumerate(records):
+                records[i] = self.read_data_columns(r, data_col_idx)
+        return records
     
     def get_record_by_name(self, entry_name, cols=None):
         if cols is None:
@@ -142,16 +146,16 @@ class Table():
     def delete_record_by_id(self, entry_id):
         filter_conditions = [("ID",entry_id)]
         if len(self.data_cols) > 0:
-            self.delete_files_of_entry(filter_conditions, self.data_cols)
+            self.delete_files_of_record(filter_conditions, self.data_cols)
         self.db.delete_entry_by_id(self.table_name, entry_id)
 
     def delete_record_by_name(self, entry_name):
         filter_conditions = [("name",entry_name)]
         if len(self.data_cols) > 0:
-            self.delete_files_of_entry(filter_conditions, self.data_cols)
+            self.delete_files_of_record(filter_conditions, self.data_cols)
         self.db.delete_entry_by_name(self.table_name, entry_name)
         
-    def delete_files_of_entry(self, filter_conditions, data_cols):
+    def delete_files_of_record(self, filter_conditions, data_cols):
         data_records = self.get_record_list(data_cols, filter_conditions)
         if len(data_records) <1:
             return
