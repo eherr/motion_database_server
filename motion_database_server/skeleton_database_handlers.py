@@ -141,8 +141,8 @@ class ReplaceSkeletonHandler(BaseDBHandler):
                 request_user_id = self.motion_database.get_user_id_from_token(token)
                 user_role = self.app.motion_database.get_user_role(request_user_id)
                 if request_user_id == owner_id or user_role.lower() == "admin":
-                    data = b"x00"
-                    meta_data = b"x00"
+                    data = None
+                    meta_data = None
                     if "data" in input_data:
                         data = json.loads(input_data["data"])
                         data = bson.dumps(data)
@@ -150,7 +150,7 @@ class ReplaceSkeletonHandler(BaseDBHandler):
                     if "meta_data" in input_data:
                         meta_data = bson.dumps(json.loads(input_data["meta_data"]))
                         meta_data = bz2.compress(meta_data)
-                    if data != b"x00" or meta_data != b"x00":
+                    if data is not None or meta_data is not None:
                         self.motion_database.replace_skeleton(skeleton_name, data, meta_data)
                         success = True
                 else:

@@ -314,12 +314,9 @@ class DownloadGraphHandler(BaseDBHandler):
             input_data = json.loads(input_str)
             if "id" in input_data:
                 graph_id = input_data["id"]
-                records = self.motion_database.get_graph_by_id(graph_id)
-                if len(records) > 0:
-                    data = bz2.decompress(records[0][1])
-                    result = bson.loads(data)
-                    result = json.dumps(result)
+                result = self.motion_database.get_graph_by_id(graph_id)
             if result is not None:
+                result = json.dumps(result)
                 self.write(result)
             else:
                 self.write("Not found")

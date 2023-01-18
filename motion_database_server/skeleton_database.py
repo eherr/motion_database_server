@@ -58,17 +58,16 @@ class SkeletonDatabase(object):
             return False
 
     def get_skeleton_by_name(self, name):
-        records = self.query_table(self.skeleton_table,[ "data", "metaData"], [("name", name)])
+        record = self.tables[self.skeleton_table].get_record_by_name(name, ["data", "metaData"])
         data = None
         meta_data = None
-        if len(records) > 0:
-            data = self.load_data_file(self.skeleton_table, records[0][0])
-            meta_data = self.load_data_file(self.skeleton_table, records[0][1])
+        if record is not None:
+            data = self.load_data_file(self.skeleton_table, record[0])
+            meta_data = self.load_data_file(self.skeleton_table, record[1])
         return data, meta_data
 
     def get_skeleton_list(self):
-        r = self.query_table(self.skeleton_table, ["ID","name", "owner"], [])
-        return r
+        return self.tables[self.skeleton_table].get_record_list(["ID","name", "owner"])
 
     def get_skeleton(self, skeleton_type):
         if skeleton_type in self.skeletons:
@@ -85,17 +84,23 @@ class SkeletonDatabase(object):
     def remove_skeleton(self, name):
         self.delete_entry_by_name(self.skeleton_table, name)
 
-    def replace_skeleton(self, name, skeleton_data=b"x00", meta_data=b"x00"):
+    def replace_skeleton(self, name, skeleton_data=None, meta_data=None):
         print("replace skeleton", name)
         if name != "":
             data = dict()
             if name != "":
                 data["name"] = name
-            if skeleton_data != b"x00":
+            if skeleton_data  is not None:
                 data["data"] = self.save_hashed_file(self.skeleton_table, "data", skeleton_data) 
-            if meta_data != b"x00":
+            if meta_data is not None:
                 data["metaData"] = self.save_hashed_file(self.skeleton_table, "metaData", meta_data) 
-            self.update_entry(self.skeleton_table, data, "name", name)
+            
+            self.tables[self.skeleton_table].update_record_by_name(name, data)
             print("load skeleton")
             self.skeletons[name] = self.load_skeleton(name)
 
+    def remove_skeleton(self, name):
+        filter_conditions = [("name",name)]
+        data_cols = self.tables[self.skeleton_table].get_data_cols()
+        self.delete_files_of_entry(self.skeleton_table, filter_conditions, data_cols)
+        self.delete_entry_by_name(self.skeleton_table, name)

@@ -21,7 +21,6 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import os
-import json
 import bson
 import bz2
 import base64
@@ -38,6 +37,7 @@ from motion_database_server.upload_buffer import UploadBuffer
 from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiveModelWrapper
 from morphablegraphs.utilities import convert_to_mgrd_skeleton
 from motion_database_server.schema import DBSchema, TABLES3
+from motion_database_server.table import Table
 JWT_ALGORITHM = 'HS256'
 
 
@@ -53,6 +53,10 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
             schema = DBSchema(TABLES3)
         self.schema = schema
         self.upload_buffer = UploadBuffer()
+        self.tables = dict()
+        for name in self.schema.tables:
+            self.tables[name] = Table(self, name, self.schema[name])
+        
         SkeletonDatabase.__init__(self)
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
@@ -71,7 +75,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
     
     def load_skeletons(self):
         self.skeletons = dict()
-        for skel_id, skel_name, owner in self.get_skeleton_list():
+        for skel_name in self.tables["skeletons"].get_record_list(["name"]):
             self.skeletons[skel_name] = self.load_skeleton(skel_name)
 
     def create_database(self, path):
@@ -86,32 +90,15 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         else:
             self.connect_to_database(path)
 
-    def delete_files_of_entry(self, table_name, filter_conditions, data_cols):
-        data_records = self.query_table(table_name, data_cols, filter_conditions)
-        if len(data_records) <1:
-            return
-        for data_file_name in data_records[0]:
-            self.delete_data_file(table_name, data_file_name)
-
-    def delete_entry_by_id(self, table_name, entry_id):
-        filter_conditions = [("ID",entry_id)]
-        data_cols = self.schema.get_data_cols(table_name)
-        if len(data_cols) > 0:
-            self.delete_files_of_entry(table_name, filter_conditions, data_cols)
-        super().delete_entry_by_id(table_name, entry_id)
-    
-
     def get_collection_by_name(self, name, parent=-1, owner=-1, public=-1, exact_match=False):
         filter_conditions =  [("name",name, exact_match)]
-        intersection_list = None
         if parent >= 0:
             filter_conditions.append(("parent",parent, True))
         if owner >= 0:
             filter_conditions.append(("owner",owner, True))
         if public >= 0:
             filter_conditions.append(("public",public, True))
-        collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
-        return collection_records
+        return self.tables[self.collections_table].get_record_list(["ID","name","type", "owner", "public"], filter_conditions)
     
     def get_collection_list_by_id(self, parent_id, owner=-1, public=-1):
         filter_conditions =  [("parent",parent_id)]
@@ -120,8 +107,7 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
             intersection_list.append(("owner",owner))
         if public >= 0:
             intersection_list.append(("public",public))
-        collection_records = self.query_table(self.collections_table, ["ID","name","type", "owner", "public"],filter_conditions, intersection_list)
-        return collection_records
+        return self.tables[self.collections_table].get_record_list(["ID","name","type", "owner", "public"], filter_conditions)
     
     def get_collection_tree(self, parent_id, owner=-1, public=-1):
         col_dict = dict()
@@ -137,15 +123,14 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         return col_dict
       
     def get_motion_by_id(self, m_id):
-        r = self.query_table(self.motion_table, ["data", "metaData", "skeleton"], [("ID",m_id)])
+        r = self.tables[self.motion_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
         data = None
         meta_data = None
         skeleton_name = ""
-        
-        if len(r) > 0:
-            data = self.load_data_file(self.motion_table, r[0][0])
-            meta_data = self.load_data_file(self.motion_table, r[0][1])
-            skeleton_name = r[0][2]
+        if r is not None:
+            data = r[0]
+            meta_data = r[1]
+            skeleton_name = r[2]
         else:
             print("Error in get motion by id", m_id)
         return data, meta_data, skeleton_name
@@ -179,32 +164,32 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         if name is not None:
             data["name"] = name
         if motion_data is not None:
-            data["data"] = self.save_hashed_file(self.motion_table, "data", motion_data)
+            data["data"] = motion_data
         if meta_data is not None:
-            data["metaData"] = self.save_hashed_file(self.motion_table, "metaData", meta_data) 
-        self.update_entry(self.motion_table, data, "ID", m_id)
+            data["metaData"] = meta_data
+        self.tables[self.motion_table].update_record(m_id, data)
 
     def get_preprocessed_data_by_id(self, m_id):
-        r = self.query_table(self.preprocessed_table, ["data", "metaData", "skeleton"], [("ID",m_id)])
+        r = self.tables[self.preprocessed_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
         data = None
         meta_data = None
         
-        if len(r) > 0:
-            data = self.load_data_file(self.preprocessed_table, r[0][0])
-            meta_data = self.load_data_file(self.preprocessed_table, r[0][1]) 
-            skeleton_name = r[0][2]
+        if r is not None:
+            data = r[0]
+            meta_data = r[1]
+            skeleton_name = r[2]
         else:
             print("Error in get processed data", m_id)
         return data, meta_data, skeleton_name
 
     def get_model_by_id(self, m_id):
-        r = self.query_table(self.model_table, ["data", "metaData", "skeleton"], [("ID",m_id)])
+        r = self.tables[self.model_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
         skeleton_name = ""
         data = None
-        if len(r) > 0:
-            data = self.load_data_file(self.model_table, r[0][0])
-            cluster_tree_data = self.load_data_file(self.model_table, r[0][1])
-            skeleton_name = r[0][2]
+        if r is not None:
+            data = r[0]
+            cluster_tree_data = r[1]
+            skeleton_name = r[2]
         else:
             print("Error in get model data",m_id)
         return data, cluster_tree_data, skeleton_name
@@ -218,46 +203,29 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         if name != "":
             data["name"] = name
         if motion_data != "":
-            data["data"] = self.save_hashed_file(self.motion_table, "data", motion_data)
+            data["data"] = motion_data
         if meta_data != "":
-            data["metaData"] = self.save_hashed_file(self.motion_table, "metaData", meta_data) 
-        self.update_entry(self.preprocessed_table, data, "ID", str(m_id))
+            data["metaData"] = meta_data
+        self.tables[self.preprocessed_table].update_record(m_id, data)
     
     def get_collection_by_id(self, collection_id):
-        filter_conditions =  [("ID",collection_id)]
-        collection_records = self.query_table(self.collections_table, ["ID","name","type", "parent"],filter_conditions)
-        collection = None
-        if len(collection_records) > 0:
-            collection = collection_records[0]
-        return collection
+        return self.tables[self.collections_table].get_record_by_id(collection_id,["ID","name","type", "parent"])
 
     def replace_collection(self, input_data, collection_id):
-        data = dict()
-        if "name" in input_data:
-            data["name"] = input_data["name"]
-        if "parent" in input_data:
-            data["parent"] = input_data["parent"]
-        if "type" in input_data:
-            data["type"] = input_data["type"]
-        if "owner" in input_data:
-            data["owner"] = input_data["owner"]
-        if "public" in input_data:
-            data["public"] = input_data["public"]
-        self.update_entry(self.collections_table, data, "id", collection_id)
-
+        self.tables[self.collections_table].update_record(collection_id, input_data)
+       
     def get_motion_list_by_collection(self, collection, skeleton=""):
         filter_conditions =[("collection",str(collection))]
         if skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
-        r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
-        return r
+        return self.tables[self.motion_table].get_record_list( ["ID","name"], filter_conditions)
 
     def get_motion_list_by_name(self, name, skeleton="", exact_match=False):
-        filter_conditions =[("name", name, exact_match)]
+        filter_conditions =[]
         if skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
         r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
-        return r
+        return self.tables[self.motion_table].search_records_by_name(name, ["ID","name"], exact_match, filter_conditions)
 
     def get_preprocessed_data_list_by_collection(self, collection, skeleton=""):
         filter_conditions =[("collection",str(collection))]
@@ -277,37 +245,32 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         filter_conditions = []
         if skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
-        r = self.query_table(self.graph_table, ["ID","name"], filter_conditions)
-        return r
+        return self.table[self.graph_table].get_record_list(["ID","name"], filter_conditions)
     
     def add_new_graph(self, name, skeleton, data):
-        data_file = self.save_hashed_file(self.graph_table, "data", data)
-        records = [(name, skeleton, data_file)]
-        print("add graph",records)
-        self.insert_records(self.graph_table, ["name", "skeleton", "data"], records)
-        records = self.get_max_id(self.graph_table)
-        new_id = -1
-        if len(records) > 0:
-            new_id = int(records.iloc[0]["ID"])
-        return new_id
+        data = dict()
+        data["name"] = name
+        data["skeleton"] = skeleton
+        data["data"] = data
+        return self.tables[self.graph_table].create_record(data)
 
     def replace_graph(self, graph_id, input_data):
-        data = dict()
-        if "name" in input_data:
-            data["name"] = input_data["name"]
-        if "skeleton" in input_data:
-            data["skeleton"] = input_data["skeleton"]
         if "data" in input_data:
             graph_data = bz2.compress(bson.dumps(input_data["data"]))
-            data["data"] = self.save_hashed_file(self.graph_table, "data",  graph_data)
-        self.update_entry(self.graph_table, data, "id", graph_id)
+            input_data["data"] = graph_data
+        self.tables[self.graph_table].update_record(graph_id, input_data)
 
     def get_graph_by_id(self, graph_id):
-        r = self.query_table(self.graph_table, ["skeleton","data"], [("ID", graph_id)])
-        return r
+        records = self.tables[self.graph_table].get_record_by_id(graph_id, ["data"])
+        data = None
+        if len(records) > 0:
+            data = records[0][0]
+            data = bz2.decompress(data)
+            data = bson.loads(data)
+        return data
 
     def remove_graph_by_id(self, graph_id):
-        return self.delete_entry_by_id(self.graph_table, graph_id)
+        return self.tables[self.graph_table].delete_record_by_id(graph_id)
 
     def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, base64_data_str, meta_data, is_processed=False):
         print("upload motion", name)
@@ -345,69 +308,61 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         n_frames = len(data["poses"])
         data = bson.dumps(data)
         data = bz2.compress(data)
-        data_file = self.save_hashed_file(self.motion_table, "data", data)
-        m_records = [(name, skeleton_name, collection, data_file, n_frames)]
-        #motion_vector.export(motion_vector.skeleton, "out_mv.bvh")
-        self.insert_records(self.motion_table, ["name", "skeleton","collection","data","numFrames"], m_records)
+        self.insert_motion(collection, skeleton_name, name, data, "", n_frames)
             
     def insert_motion(self, collection, skeleton_name, name, data, meta_data, n_frames):
-        data_file = self.save_hashed_file(self.preprocessed_table, "data", data)
-        meta_data_file = self.save_hashed_file(self.preprocessed_table, "metaData", meta_data)
-        m_records = [(name, skeleton_name, collection, data_file, meta_data_file, n_frames)]
-        self.insert_records(self.motion_table, ["name", "skeleton","collection","data", "metaData", "numFrames"], m_records)
+        data = dict()
+        data["name"] = name
+        data["collection"] = collection
+        data["skeleton"] = skeleton_name
+        data["numFrames"] = n_frames
+        data["data"] = data
+        data["metaData"] = meta_data
+        return self.tables[self.motion_table].create_record(data)
 
     def insert_preprocessed_data(self, collection, skeleton_name, name, data, meta_data):
-        data_file = self.save_hashed_file(self.preprocessed_table, "data", data)
-        meta_data_file = self.save_hashed_file(self.preprocessed_table, "metaData", meta_data)
-        m_records = [(name, skeleton_name, collection, data_file, meta_data_file)]
-        self.insert_records(self.preprocessed_table, ["name", "skeleton","collection","data","metaData"], m_records)
-        
+        data = dict()
+        data["name"] = name
+        data["collection"] = collection
+        data["skeleton"] = skeleton_name
+        data["data"] = data
+        data["metaData"] = meta_data
+        return self.tables[self.preprocessed_table].create_record(data)
 
     def delete_motion_by_id(self, motion_id):
-        return self.delete_entry_by_id(self.motion_table, motion_id)
+        return self.tables[self.motion_table].delete_record_by_id(motion_id)
 
     def delete_preprocessed_data(self, motion_id):
-        return self.delete_entry_by_id(self.preprocessed_table, motion_id)
+        return self.tables[self.preprocessed_table].delete_record_by_id(motion_id)
 
     def add_new_collection_by_id(self, name, collection_type, parent_id, owner, public=0):
         owner = max(0, owner)
-        records = [(name, collection_type, parent_id, owner, public)]
-        self.insert_records(self.collections_table, ["name", "type", "parent", "owner", "public"], records)
-        records = self.get_max_id(self.collections_table)
-        new_id = -1
-        if len(records) > 0:
-            new_id = int(records.iloc[0]["ID"])
-        return new_id
+        data = dict()
+        data["name"] = name
+        data["type"] = collection_type
+        data["parent"] = parent_id
+        data["owner"] = owner
+        data["public"] = public
+        return self.tables[self.collections_table].create_record(data)
 
-    def remove_collection_by_id(self, motion_id):
-        return self.delete_entry_by_id(self.collections_table, motion_id)
+    def remove_collection_by_id(self, collection_id):
+        return self.tables[self.collections_table].delete_record_by_id(collection_id)
 
-    def upload_motion_model(self, name, mp_name, skeleton, model_data):
-        records = []
-        data_file = self.save_hashed_file(self.motion_table, "data", model_data)
-        row = (name, mp_name, skeleton, data_file)
-        records.append(row)
-        self.insert_records(self.model_table, ["name", "collection","skeleton", "data"], records)
-        records = self.get_max_id(self.model_table)
-        new_id = -1
-        if len(records) > 0:
-            new_id = int(records.iloc[0]["ID"])
-        return new_id
-
+    def upload_motion_model(self, name, collection, skeleton, model_data):
+        data = dict()
+        data["name"] = name
+        data["collection"] = collection
+        data["skeleton"] = skeleton
+        data["data"] = model_data
+        return self.tables[self.model_table].create_record(data)
 
     def upload_cluster_tree(self, model_id, cluster_tree_data):
         data = dict()
-        data["metaData"] = self.save_hashed_file(self.motion_table, "metaData", cluster_tree_data)
-        self.update_entry(self.model_table, data, "ID", str(model_id))
-
-    def remove_skeleton(self, name):
-        filter_conditions = [("name",name)]
-        data_cols = self.schema.get_data_cols(self.skeleton_table)
-        self.delete_files_of_entry(self.skeleton_table, filter_conditions, data_cols)
-        self.delete_entry_by_name(self.skeleton_table, name)
+        data["metaData"] = cluster_tree_data
+        self.tables[self.model_table].update_record(model_id, data)
 
     def delete_model_by_id(self, m_id):
-        self.delete_entry_by_id(self.model_table, m_id)
+        return self.tables[self.model_table].delete_record_by_id(m_id)
 
     def get_motion_primitive_sample(self, model_id):
         mv = None
@@ -450,36 +405,19 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         else:
             return not self.enforce_access_rights
     
-
     def get_owner_of_collection(self, collection_id):
-        owner = None
-        r = self.query_table(self.collections_table, ["owner"], [("ID", collection_id)])
-        if len(r) > 0:
-            owner = r[0][0]
-        return owner
+        return self.tables[self.collections_table].get_value_of_column_by_id(collection_id, "owner")
 
     def get_owner_of_motion(self, motion_id):
-        owner = None
-        r = self.query_table(self.motion_table, ["collection"], [("ID", motion_id)])
-        if len(r) > 0:
-            collection_id = r[0][0]
-            owner = self.get_owner_of_collection(collection_id)
-        return owner    
+        return self.tables[self.motion_table].get_value_of_column_by_id(motion_id, "owner")
     
     def get_owner_of_model(self, model_id):
-        owner = None
-        r = self.query_table(self.model_table, ["collection"], [("ID", model_id)])
-        if len(r) > 0:
-            collection_id = r[0][0]
-            owner = self.get_owner_of_collection(collection_id)
-        return owner
-
+        collection_id = self.tables[self.model_table].get_value_of_column_by_id(model_id, "collection")
+        if collection_id is None:
+            return None
+        return self.get_owner_of_collection(collection_id)
+       
     def get_owner_of_skeleton(self, skeleton_name):
-        owner = None
-        r = self.query_table(self.skeleton_table, ["owner"], [("name", skeleton_name)])
-        if len(r) > 0:
-            owner = r[0][0]
-        return owner
-
+        return self.tables[self.skeleton_table].get_value_of_column_by_name(skeleton_name, "owner")
 
 
