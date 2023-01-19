@@ -409,7 +409,10 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
         return self.tables[self.collections_table].get_value_of_column_by_id(collection_id, "owner")
 
     def get_owner_of_motion(self, motion_id):
-        return self.tables[self.motion_table].get_value_of_column_by_id(motion_id, "owner")
+        collection_id = self.tables[self.motion_table].get_value_of_column_by_id(motion_id, "collection")
+        if collection_id is None:
+            return None
+        return self.get_owner_of_collection(collection_id)
     
     def get_owner_of_model(self, model_id):
         collection_id = self.tables[self.model_table].get_value_of_column_by_id(model_id, "collection")
