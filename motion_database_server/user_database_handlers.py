@@ -31,55 +31,6 @@ class GetUserListHandler(BaseDBHandler):
         response = json.dumps(user_list)
         self.write(response)
 
-class GetUserAccessGroupListHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           success = False
-           response_dict = dict()
-           if "user_id" in input_data:
-               user_id = input_data["user_id"]
-               group_list = self.app.motion_database.get_user_access_group_list(user_id)
-               print("group list", group_list)
-               success = True
-               response_dict["group_list"] = group_list
-
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class GetGroupListHandler(BaseDBHandler):
-    def get(self):
-        group_list = self.app.motion_database.get_group_list()
-        response = json.dumps(group_list)
-        self.write(response)
-
-
-class GetGroupMemberListHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           group_id = input_data["group_id"]
-           group_list = self.app.motion_database.get_group_member_list(group_id)
-           response = json.dumps(group_list)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in post")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-        
 class AddUserHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
@@ -195,10 +146,7 @@ class GetUserInfoHandler(BaseDBHandler):
                response_dict = dict()
                response_dict["success"] = True
                user_info = self.app.motion_database.get_user_info(user_id)
-               response_dict["name"] = user_info[0]
-               response_dict["email"] = user_info[1]
-               response_dict["role"] = user_info[2]
-               response_dict["shared_access_groups"] = user_info[3]
+               response_dict.update(user_info)
                response = json.dumps(response_dict)
                self.write(response)
                success = True
@@ -214,138 +162,6 @@ class GetUserInfoHandler(BaseDBHandler):
         finally:
             self.finish()
 
-
-class AddGroupHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           group_name = input_data["group_name"]
-           token = input_data["token"]
-           owner_id = self.app.motion_database.get_user_id_from_token(token)
-           success = False
-           if owner_id > -1:
-               print("create group", group_name)
-               self.app.motion_database.create_group(group_name, owner_id)
-               success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class EditGroupHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           print(input_str)
-           input_data = json.loads(input_str)
-           group_id = input_data["group_id"]
-           group_name = input_data["group_name"]
-           token = input_data["token"]
-           users = input_data["users"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
-           success = False
-           if user_id > -1:
-               owner_id = self.app.motion_database.get_group_owner(group_id)
-               if user_id == owner_id:
-                   self.app.motion_database.edit_group(group_id, group_name, users)
-                   success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-    
-class RemoveGroupHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           group_id = input_data["group_id"]
-           token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
-           success = False
-           if user_id > -1:
-               owner_id = self.app.motion_database.get_group_owner(group_id)
-               if user_id == owner_id:
-                   self.app.motion_database.remove_group(group_id)
-                   success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-    
-
-class GriveAccessToGroupHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           group_name = input_data["group_name"]
-           token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
-           group_id = self.app.motion_database.get_group_id(group_name)
-           success = False
-           if user_id > -1 and group_id > -1:
-               self.app.motion_database.grant_group_access_to_user_data(group_id, user_id)
-               success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class RemoveAccessFromGroupHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           group_name = input_data["group_name"]
-           token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
-           group_id = self.app.motion_database.get_group_id(group_name)
-           success = False
-           if user_id > -1 and group_id > -1:
-               self.app.motion_database.remove_group_access_to_user_data(group_id, user_id)
-               success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
 
 
 class LoginHandler(BaseDBHandler):
@@ -404,14 +220,6 @@ USER_DB_HANDLER_LIST = [(r"/users", GetUserListHandler),
                             (r"/users/reset_password", ResetUserPasswordHandler),
                             (r"/users/add", AddUserHandler),
                             (r"/users/remove", RemoveUserHandler),
-                            (r"/user_access_groups",GetUserAccessGroupListHandler),
-                            (r"/groups", GetGroupListHandler),
-                            (r"/group_members", GetGroupMemberListHandler),
-                            (r"/groups/add", AddGroupHandler),
-                            (r"/groups/edit", EditGroupHandler),
-                            (r"/groups/remove", RemoveGroupHandler),
-                            (r"/groups/give_access", GriveAccessToGroupHandler),
-                            (r"/groups/remove_access", RemoveAccessFromGroupHandler),
                             (r"/users/verify", LoginHandler),
                             (r"/authenticate", AuthenticateHandler)
                             ]

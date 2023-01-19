@@ -27,7 +27,7 @@ import base64
 import numpy as np
 import jwt
 from motion_database_server.utils import get_bvh_from_str, extract_compressed_bson, get_bvh_string, save_json_file
-from motion_database_server.user_database import UserDatabase
+from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.skeleton_database import SkeletonDatabase
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from anim_utils.animation_data.motion_vector import MotionVector
@@ -37,12 +37,9 @@ from motion_database_server.upload_buffer import UploadBuffer
 from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiveModelWrapper
 from morphablegraphs.utilities import convert_to_mgrd_skeleton
 from motion_database_server.schema import DBSchema, TABLES3
-from motion_database_server.table import Table
-JWT_ALGORITHM = 'HS256'
 
 
-
-class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStorage):
+class MotionDatabase(ProjectDatabase, SkeletonDatabase, CharacterStorage, FileStorage):
     collections_table = "collections"
     motion_table = "motion_clips"
     preprocessed_table = "preprocessed_data"
@@ -51,44 +48,18 @@ class MotionDatabase(UserDatabase, SkeletonDatabase, CharacterStorage, FileStora
     def __init__(self, schema=None, server_secret=None, data_dir="data"):
         if schema is None:
             schema = DBSchema(TABLES3)
-        self.schema = schema
-        self.upload_buffer = UploadBuffer()
-        self.tables = dict()
-        for name in self.schema.tables:
-            self.tables[name] = Table(self, name, self.schema.tables[name])
-        
         SkeletonDatabase.__init__(self)
+        FileStorage.__init__(self, data_dir)
+        CharacterStorage.__init__(self, data_dir + os.sep +"characters")
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
-        self.jwt = jwt.JWT()
-        if server_secret is not None:
-            self.server_secret = jwt.jwk.OctetJWK(bytes(server_secret, "utf-8"))
-        else:
-            self.server_secret = None
-        self.enforce_access_rights = server_secret is not None
-        FileStorage.__init__(self,data_dir)
-        CharacterStorage.__init__(self, data_dir + os.sep +"characters")
-    
-    def connect(self, path):
-        self.connect_to_database(path)
-        print(path)
+        self.upload_buffer = UploadBuffer()
+        ProjectDatabase.__init__(self, schema, server_secret)
     
     def load_skeletons(self):
         self.skeletons = dict()
         for skel_name, in self.tables["skeletons"].get_record_list(["name"]): 
             self.skeletons[skel_name] = self.load_skeleton(skel_name)
-
-    def create_database(self, path):
-        self.connect_to_database(path)
-        self.schema.create_tables(self)
-        print("created database",path)
-
-    def init_database(self, path, recreate=False):
-        create_db = not os.path.isfile(path)
-        if create_db or recreate:
-            self.create_database(path)
-        else:
-            self.connect_to_database(path)
 
     def get_collection_by_name(self, name, parent=-1, owner=-1, public=-1, exact_match=False):
         filter_conditions =  [("name",name, exact_match)]

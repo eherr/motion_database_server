@@ -37,29 +37,23 @@ BLOB_T = "BLOB"
 TEXT_T = "TEXT"
 
 TABLES = dict()
-TABLES["groups"] = [("name",TEXT_T), # need to be unique
-                    ("owner",INT_T),     # user id
-                     ("users",TEXT_T)]   #  list of user ids 
-
 TABLES["users"] = [("name",TEXT_T),
                     ("password",TEXT_T), 
                     ("email",TEXT_T), 
-                    ("role",TEXT_T), # is admin or user
-                    ("sharedAccessGroups",TEXT_T)] # list of group ids with shared access
+                    ("role",TEXT_T)] # is admin or user
 
-# every user can be part of multiple groups
-# users can share their servers with groups in sharedAccessGroups
-# and every user in those groups can have access to it
-
+RESET_PASSWORD_EMAIL_MESSAGE = """Dear %s
+Here is your new password:
+%s
+"""
 
 class UserDatabase(DatabaseWrapper):
     user_table = "users"
-    groups_table = "user_groups"
-    def __init__(self, server_secret=None):
-        self.schema = DBSchema(TABLES)
+    def __init__(self, schema, server_secret=None):
+        self.schema =schema
         self.tables = dict()
         for name in self.schema.tables:
-            self.tables[name] = Table(self, name, self.schema[name])
+            self.tables[name] = Table(self, name, self.schema.tables[name])
         self.enforce_access_rights = server_secret is not None
         self.jwt = jwt.JWT()
         if server_secret is not None:
@@ -111,7 +105,7 @@ class UserDatabase(DatabaseWrapper):
         else:
             return ""
     
-    def create_user(self, name, password, email, role, sharedAccessGroups):
+    def create_user(self, name, password, email, role, projects):
         if self.get_user_id_by_name(name) != -1:
             print("Error: user %s already exists"%name)
             return False
@@ -129,8 +123,7 @@ class UserDatabase(DatabaseWrapper):
         data["password"] = password
         data["email"] = email
         data["role"] = role
-        data["sharedAccessGroups"] = sharedAccessGroups
-        self.tables[self.user_table].create_record(data)
+        new_id = self.tables[self.user_table].create_record(data)
         return True
     
     def edit_user(self, user_id, data):
@@ -150,142 +143,20 @@ class UserDatabase(DatabaseWrapper):
             if "email" in new_data and self.get_user_id_by_email(new_data["email"]) not in [-1, user_id]:
                 print("Warning: email %s already exists and will be ignored"%new_data["email"])
                 del new_data["email"]
-
             if "password" in new_data:
                 m = hashlib.sha256()
                 m.update(bytes(data["password"],"utf-8"))
                 new_data["password"] = m.digest()
-            if "sharedAccessGroups" in new_data:
-                new_data["sharedAccessGroups"] = json.dumps(data["sharedAccessGroups"])
 
             self.tables[self.user_table].update_record(user_id, new_data)
             return True
         except Exception as e:
             print("Error", e.args)
             return False
-        
-    def create_group(self, name, owner):
-        data = dict()
-        data["name"] = name
-        data["owner"] = owner
-        data["users"] = "[]"
-        self.tables[self.groups_table].create_record(data)
-
-    def add_user_to_group(self, user_id, group_id):
-        record = self.tables[self.groups_table].get_record_by_id(group_id, ["users"])
-        if record is None:
-            return
-        users_str = record[0]
-        print("group str",users_str)
-        try:
-            users = json.loads(users_str)
-            users = set(users)
-            users.add(user_id)
-            users = list(users)
-            data = dict()
-            data["users"] = json.dumps(users)
-            self.tables[self.groups_table].update_record(group_id, data)
-            print("update", data)
-        except Exception as e:
-            print("Error", e.args)
-
-    def remove_user_from_group(self, user_id, group_id):
-        record = self.tables[self.groups_table].get_record_by_id(group_id, ["users"])
-        if record is None:
-            return
-        users_str = record[0]
-        print("group str",users_str)
-        try:
-            users = json.loads(users_str)
-            users = set(users)
-            users.discard(user_id)
-            users = list(users)
-            data = dict()
-            data["users"] = json.dumps(users)
-            self.tables[self.groups_table].update_record(group_id, data)
-            print("update", data)
-        except Exception as e:
-            print("Error", e.args)
-
-    def grant_group_access_to_user_data(self, group_id, user_id):
-        record = self.tables[self.user_table].get_record_by_id(user_id, ["sharedAccessGroups"])
-        if record is None:
-            return
-        groups_str = record[0]
-        print("group str",groups_str)
-        try:
-            groups = json.loads(groups_str)
-            groups = set(groups)
-            groups.add(group_id)
-            groups = list(groups)
-            data = dict()
-            data["sharedAccessGroups"] = json.dumps(groups)
-            self.tables[self.user_table].update_record(user_id, data)
-            print("update", data)
-        except Exception as e:
-            print("Error", e.args)
-
-    def remove_group_access_to_user_data(self, group_id, user_id):
-        record = self.tables[self.user_table].get_record_by_id(user_id, ["sharedAccessGroups"])
-        if record is None:
-            return
-        groups_str = record[0]
-        print("group str",groups_str)
-        try:
-            groups = json.loads(groups_str)
-            groups = set(groups)
-            groups.discard(group_id)
-            groups = list(groups)
-            data = dict()
-            data["sharedAccessGroups"] = json.dumps(groups)
-            self.tables[self.user_table].update_record(user_id, data)
-            print("update", data)
-        except Exception as e:
-            print("Error", e.args)
 
     def remove_user(self, user_id):
         self.delete_entry_by_id(self.user_table, user_id)
 
-    def remove_group(self, group_id):
-        self.delete_entry_by_id(self.groups_table, group_id)
-
-    def edit_group(self, group_id, name, user_list):
-        data = dict()
-        data["name"] = name
-        data["users"] = json.dumps(user_list)
-        self.tables[self.groups_table].update_record(group_id, data)
-
-    def get_group_id(self, group_name, owner_id=None):
-        filter_conditions = [("name",group_name)]
-        filter_conditions += [("owner",owner_id)]
-        r = self.query_table(self.groups_table, ["ID"], filter_conditions)
-        if len(r) > 0:
-            return r[0][0]
-        else:
-            return -1
-
-    def get_group_owner(self, group_id):
-        owner = self.tables[self.groups_table].get_value_of_column_by_id(group_id, "owner")
-        if owner is None:
-            return -1
-        else:
-            return owner
-
-    def is_user_in_group(self, group_id, user_id):
-        success = False
-        users = self.get_group_member_list(group_id)
-        success = user_id in users
-        return success
-
-    def has_access(self, group_id, owner_user_id):
-        """ check if request_user is in a group that has access to host shared by owner_user"""
-        success = False
-        # get all groups with access to user data
-        shared_groups = self.get_user_access_group_list(owner_user_id)
-        if group_id in shared_groups:
-            success = True
-        return success
-                
     def is_valid_user(self, session):
         if self.enforce_access_rights and "user_id" in session and "token" in session:
             #token = bytes(session["token"], "utf-8")
@@ -301,26 +172,14 @@ class UserDatabase(DatabaseWrapper):
 
     def get_user_list(self):
         return self.tables[self.user_table].get_record_list(["ID", "name"])
-    
-    def get_group_list(self):
-        return self.tables[self.groups_table].get_record_list(["ID", "name"])
-    
-    def get_group_member_list(self, group_id):
-        user_list_str = self.tables[self.groups_table].get_value_of_column_by_id(group_id, "users")
-        users = []
-        if user_list_str is not None:
-            users = json.loads(user_list_str)
-        return users
-
-    def get_user_access_group_list(self, user_id):
-        group_list_str = self.tables[self.user_table].get_value_of_column_by_id(user_id, "sharedAccessGroups")
-        groups = []
-        if group_list_str is not None:
-            groups = json.loads(group_list_str)
-        return groups
 
     def get_user_info(self, user_id):
-        return self.tables[self.user_table].get_record_by_id(user_id, ["name", "email", "role", "sharedAccessGroups"])
+        data = dict()
+        record = self.tables[self.user_table].get_record_by_id(user_id, ["name", "email", "role"])
+        data["name"] = record[0]
+        data["email"] = record[1]
+        data["role"] = record[2]
+        return data
 
     def get_user_info_by_email(self, email):
         filter_conditions = [("email",email)]
@@ -345,10 +204,7 @@ class UserDatabase(DatabaseWrapper):
             return False
 
         subject = "motion.dfki.de: password reset"
-        message = """Dear %s
-Here is your new password:
-%s
-"""%(username, new_password)
+        message = RESET_PASSWORD_EMAIL_MESSAGE%(username, new_password)
         self.send_email(username, email, subject, message)
         return True
 

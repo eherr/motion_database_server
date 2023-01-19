@@ -112,8 +112,6 @@ TABLES2["experiments"] = EXPERIMENTS_TABLE
 
 
 
-
-
 TABLES3 = dict()
 TABLES3["collections"] = COLLECT_TABLE
 TABLES3["skeletons"] = [("name",TEXT_T),
@@ -146,8 +144,14 @@ TABLES3["models"] = [("name",TEXT_T),
 TABLES3["graphs"] = [("name",TEXT_T),
                     ("skeleton",INT_T), 
                     ("data",TEXT_T)]
-TABLES3["users"] = USER_TABLE
-TABLES3["user_groups"] = USER_GROUPS_TABLE
+TABLES3["users"] = [("name",TEXT_T),
+                    ("password",TEXT_T), 
+                    ("role",TEXT_T), 
+                    ("email",TEXT_T)]
+TABLES3["projects"] = [("name",TEXT_T), 
+                    ("owner",INT_T),    
+                    ("public",INT_T)]  
+TABLES3["project_members"] = [("user",INT_T), ("project",INT_T)]  
 TABLES3["experiments"] = EXPERIMENTS_TABLE
 TABLES3["meshes"] = [("name",TEXT_T), 
                     ("skeleton",INT_T),
