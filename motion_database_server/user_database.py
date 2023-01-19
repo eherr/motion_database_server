@@ -171,7 +171,7 @@ class UserDatabase(DatabaseWrapper):
             return not self.enforce_access_rights
 
     def get_user_list(self):
-        return self.tables[self.user_table].get_record_list(["ID", "name"])
+        return self.tables[self.user_table].get_record_list(["ID", "name", "role"])
 
     def get_user_info(self, user_id):
         data = dict()
