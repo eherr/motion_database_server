@@ -72,6 +72,7 @@ class Table():
 
     def read_data_columns(self, record, col_idx):
         for i in col_idx:
+            print("read", self.table_name, record[i])
             record[i] = self.db.load_data_file(self.table_name, record[i])
         return record
 
@@ -82,6 +83,7 @@ class Table():
             if key in input_data:
                 if key in self.data_cols:
                     filename = self.db.save_hashed_file(self.table_name, key, input_data[key])
+                    print("write",self.table_name, filename)
                     data[key] = filename
                     modified_data_cols.append(key)
                 else:
@@ -99,15 +101,12 @@ class Table():
         self.db.update_entry(self.table_name, data, "name", entry_name)
 
     def create_record(self, input_data):
+        input_data, modified_data_cols = self.write_data_columns(input_data)
         col_keys = []
         cols_values = []
-        for key in self.cols:
-            if key in input_data:
-                col_value = input_data[key]
-                if key in self.data_cols:
-                    col_value = self.db.save_hashed_file(self.table_name, key, col_value)
-                col_keys.append(key)
-                cols_values.append(col_value)
+        for key in input_data:
+            col_keys.append(key)
+            cols_values.append(input_data[key])
         records = [cols_values]
         self.db.insert_records(self.table_name, col_keys, records)
         records = self.db.get_max_id(self.table_name)
@@ -116,14 +115,15 @@ class Table():
             new_id = int(records.iloc[0]["ID"])
         return new_id
 
-    def get_record_list(self, cols=None, filter_conditions=[],intersection_list=[]):
+    def get_record_list(self, cols=None, filter_conditions=[],intersection_list=[], load_data_files=True):
         if cols is None:
             cols = self.cols
         records = self.db.query_table(self.table_name, cols, filter_conditions,intersection_list)
-        data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
-        if len(data_col_idx) > 0:
-            for i, r in enumerate(records):
-                records[i] = self.read_data_columns(list(r), data_col_idx)
+        if load_data_files:
+            data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+            if len(data_col_idx) > 0:
+                for i, r in enumerate(records):
+                    records[i] = self.read_data_columns(list(r), data_col_idx)
         return records
 
     def get_value_of_column_by_id(self, entry_id, col_name):
@@ -156,8 +156,9 @@ class Table():
         self.db.delete_entry_by_name(self.table_name, entry_name)
         
     def delete_files_of_record(self, filter_conditions, data_cols):
-        data_records = self.get_record_list(data_cols, filter_conditions)
+        data_records = self.get_record_list(data_cols, filter_conditions, load_data_files=False)
         if len(data_records) <1:
             return
         for data_file_name in data_records[0]:
+            print("delete file", self.table_name, data_file_name)
             self.db.delete_data_file(self.table_name, data_file_name)
