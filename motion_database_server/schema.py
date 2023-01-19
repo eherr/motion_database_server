@@ -149,7 +149,8 @@ TABLES3["users"] = [("name",TEXT_T),
                     ("role",TEXT_T), 
                     ("email",TEXT_T)]
 TABLES3["projects"] = [("name",TEXT_T), 
-                    ("owner",INT_T),    
+                    ("owner",INT_T),   
+                    ("collection",INT_T),   
                     ("public",INT_T)]  
 TABLES3["project_members"] = [("user",INT_T), ("project",INT_T)]  
 TABLES3["experiments"] = EXPERIMENTS_TABLE
