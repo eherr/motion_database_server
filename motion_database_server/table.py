@@ -92,12 +92,14 @@ class Table():
 
     def update_record(self, entry_id, input_data):
         data, modified_data_cols = self.write_data_columns(input_data)
-        self.delete_files_of_entry([("ID",entry_id)], modified_data_cols)
+        if len(modified_data_cols) > 0:
+            self.delete_files_of_record([("ID",entry_id)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "ID", entry_id)
 
     def update_record_by_name(self, entry_name, input_data):
         data, modified_data_cols = self.write_data_columns(input_data)
-        self.delete_files_of_entry([("name",entry_name)], modified_data_cols)
+        if len(modified_data_cols) > 0:
+            self.delete_files_of_record([("name",entry_name)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "name", entry_name)
 
     def create_record(self, input_data):
@@ -154,6 +156,11 @@ class Table():
         if len(self.data_cols) > 0:
             self.delete_files_of_record(filter_conditions, self.data_cols)
         self.db.delete_entry_by_name(self.table_name, entry_name)
+
+    def delete_record_by_condition(self, filter_conditions):
+        if len(self.data_cols) > 0:
+            self.delete_files_of_record(filter_conditions, self.data_cols)
+        self.db.delete_entry_by_condition(self.table_name, filter_conditions)
         
     def delete_files_of_record(self, filter_conditions, data_cols):
         data_records = self.get_record_list(data_cols, filter_conditions, load_data_files=False)
