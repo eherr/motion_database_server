@@ -167,11 +167,37 @@ class GetUserProjectsHandler(BaseDBHandler):
             self.finish()
 
 
+class GetProjectInfoHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            print(input_str)
+            input_data = json.loads(input_str)
+            project_id = int(input_data["project_id"])
+            project_info = self.app.motion_database.get_project_info(project_id)
+            response_dict = dict()
+            success = False
+            if project_info is not None:
+                response_dict.update(project_info)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
 
 PROJECT_DB_HANDLER_LIST = [(r"/projects", GetProjectListHandler),
                             (r"/project_members", GetProjectMemberListHandler),
                             (r"/projects/add", AddProjectHandler),
                             (r"/projects/edit", EditProjectHandler),
                             (r"/projects/remove", RemoveProjectHandler),
-                            (r"/user/projects",GetUserProjectsHandler)
+                            (r"/user/projects",GetUserProjectsHandler),
+                            (r"/projects/info", GetProjectInfoHandler),
                             ]

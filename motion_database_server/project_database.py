@@ -156,3 +156,13 @@ class ProjectDatabase(UserDatabase):
         data = super().get_user_info(user_id)
         data["project_list"] = self.get_user_project_list(user_id)
         return data
+
+    def get_project_info(self, project_id):
+        cols = ["name", "owner", "public", "collection"]
+        record = self.tables[self.projects_table].get_record_by_id(project_id, cols)
+        if record is None:
+            return None
+        data = dict()
+        for i, k in enumerate(cols):
+            data[k] = record[i]
+        return data
