@@ -187,8 +187,10 @@ class DatabaseWrapper(object):
                 query_str += ")"
         return query_str
 
-    def query_table(self, table_name, column_list, filter_list=None, intersection_list=None):
+    def query_table(self, table_name, column_list, filter_list=None, intersection_list=None, join_statement=None, distinct=False):
         query_str = "SELECT "
+        if distinct:
+            query_str += " DISTINCT "
         last_idx = len(column_list)-1
         for idx, c in enumerate(column_list):
             query_str += c
@@ -197,14 +199,18 @@ class DatabaseWrapper(object):
             else:
                 query_str += " "  
         query_str += "FROM  " + table_name
+        if join_statement is not None:
+            query_str += " "+join_statement
         query_str += self.get_condition_str(filter_list, intersection_list)
         query_str += ";"
+        #print(query_str)
         records = pd.read_sql_query(query_str, self.con)
         results = []
         for idx, r in records.iterrows():
             record = []
-            for c in column_list:
-                record.append(r[c])
+            for k, v in r.items():
+                #print(k, v)
+                record.append(v)
             results.append(tuple(record))
         return results
 

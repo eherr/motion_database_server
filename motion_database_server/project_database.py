@@ -114,8 +114,19 @@ class ProjectDatabase(UserDatabase):
         success = user_id in users
         return success
 
-    def get_project_list(self):
-        return self.tables[self.projects_table].get_record_list(["ID", "name"])
+    def get_project_list(self, user_id=None):
+        #select project list 
+        join_statement = None
+        intersection_list = []
+        if user_id is not None:
+            # select cols where id in select id where user is user_id
+            intersection_list += [("public", True) ]
+            intersection_list += [(self.project_members_table+".user", user_id) ]
+            join_statement = " LEFT JOIN "+self.project_members_table+" ON  projects.ID = "+self.project_members_table+".project"
+
+        #query_str = "select distinct p.ID, p.name from projects p left join project_members m ON  p.ID = m.project where m.user == %s or p.public == True;".format(user_id)
+        
+        return self.tables[self.projects_table].get_record_list(["projects.ID", "name"], intersection_list=intersection_list,join_statement=join_statement, distinct=True)
     
     def get_project_member_list(self, project_id):
         filter_conditions = [("project", project_id)]

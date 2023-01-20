@@ -117,10 +117,10 @@ class Table():
             new_id = int(records.iloc[0]["ID"])
         return new_id
 
-    def get_record_list(self, cols=None, filter_conditions=[],intersection_list=[], load_data_files=True):
+    def get_record_list(self, cols=None, filter_conditions=[],intersection_list=[], load_data_files=True, join_statement=None, distinct=False):
         if cols is None:
             cols = self.cols
-        records = self.db.query_table(self.table_name, cols, filter_conditions,intersection_list)
+        records = self.db.query_table(self.table_name, cols, filter_conditions,intersection_list,join_statement, distinct)
         if load_data_files:
             data_col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
             if len(data_col_idx) > 0:

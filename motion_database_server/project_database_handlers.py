@@ -25,12 +25,29 @@ import tornado.web
 from motion_database_server.base_handler import BaseDBHandler
 
 
+
 class GetProjectListHandler(BaseDBHandler):
     def get(self):
         project_list = self.app.motion_database.get_project_list()
         response = json.dumps(project_list)
         self.write(response)
 
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           token = input_data["token"]
+           user_id = self.app.motion_database.get_user_id_from_token(token)
+           project_list = self.app.motion_database.get_project_list(user_id)
+           response = json.dumps(project_list)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in post")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
 
 class GetProjectMemberListHandler(BaseDBHandler):
     @tornado.gen.coroutine
