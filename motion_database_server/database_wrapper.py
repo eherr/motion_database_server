@@ -29,7 +29,6 @@ http://stackoverflow.com/questions/36028759/how-to-open-and-convert-sqlite-datab
 http://stackoverflow.com/questions/23574614/appending-pandas-dataframe-to-sqlite-table-by-primary-key
 http://www.sqlitetutorial.net/sqlite-python/delete/
 """
-import io
 import sqlite3
 import pandas as pd
 
@@ -166,16 +165,8 @@ class DatabaseWrapper(object):
             query_str = c[0]+" = "+str(c[1])
         return query_str
 
-    def query_table(self, table_name, column_list, filter_list=None, intersection_list=None):
-        query_str = "SELECT "
-        last_idx = len(column_list)-1
-        for idx, c in enumerate(column_list):
-            query_str += c
-            if idx < last_idx:
-                query_str += ", "  
-            else:
-                query_str += " "  
-        query_str += "FROM  " + table_name
+    def get_condition_str(self, filter_list=None, intersection_list=None):
+        query_str = ""
         has_filter_list = filter_list is not None and len(filter_list) > 0
         has_intersection_list = intersection_list is not None and len(intersection_list) > 0
         if has_filter_list or has_intersection_list:
@@ -194,6 +185,19 @@ class DatabaseWrapper(object):
                 query_str += self.get_filter_str(c)
             if has_filter_list:
                 query_str += ")"
+        return query_str
+
+    def query_table(self, table_name, column_list, filter_list=None, intersection_list=None):
+        query_str = "SELECT "
+        last_idx = len(column_list)-1
+        for idx, c in enumerate(column_list):
+            query_str += c
+            if idx < last_idx:
+                query_str += ", "  
+            else:
+                query_str += " "  
+        query_str += "FROM  " + table_name
+        query_str += self.get_condition_str(filter_list, intersection_list)
         query_str += ";"
         records = pd.read_sql_query(query_str, self.con)
         results = []
@@ -214,6 +218,14 @@ class DatabaseWrapper(object):
     def delete_entry_by_name(self, table_name, name):
         query_str = "DELETE FROM " + table_name + \
                     " WHERE name='"+ str(name) + "';"
+        print(query_str)
+        self.con.execute(query_str)
+        self.con.commit()
+    
+    def delete_entry_by_condition(self, table_name, filter_list=None, intersection_list=None):
+        query_str = "DELETE FROM " + table_name
+        query_str += self.get_condition_str(filter_list, intersection_list)
+        query_str += ";"
         print(query_str)
         self.con.execute(query_str)
         self.con.commit()
