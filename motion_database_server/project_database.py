@@ -57,10 +57,14 @@ class ProjectDatabase(UserDatabase):
         super().__init__(schema, server_secret)
     
     def create_project(self, name, owner, public):
+        collection_type = "root"
+        parent_id = 0
+        new_id = self.add_new_collection_by_id(name, collection_type, parent_id, owner, public)
         data = dict()
         data["name"] = name
         data["owner"] = owner
         data["public"] = public
+        data["collection"] = new_id
         new_id = self.tables[self.projects_table].create_record(data)
         self.add_project_membership(owner, new_id)
 
