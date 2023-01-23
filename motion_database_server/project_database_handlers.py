@@ -102,7 +102,7 @@ class EditProjectHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            project_id = input_data["project_id"]
            project_name = input_data["project_name"]
-           public = input_data.get("public", None)
+           public = input_data.get("is_public", None)
            token = input_data["token"]
            users = input_data["users"]
            user_id = self.app.motion_database.get_user_id_from_token(token)
