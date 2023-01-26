@@ -31,6 +31,7 @@ from motion_database_server.kubernetes_interface import load_kube_config
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
+from motion_database_server.model_database_handlers import MODEL_DB_HANDLER_LIST
 from motion_database_server.mg_model_handlers import MG_MODEL_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
 from motion_database_server.job_server_handlers import JOB_SERVER_HANDLER_LIST
@@ -64,6 +65,7 @@ class MotionDatabaseService(ServiceBase):
         self.request_handler_list += SKELETON_DB_HANDLER_LIST
         self.request_handler_list += MOTION_DB_HANDLER_LIST
         self.request_handler_list += MG_MODEL_HANDLER_LIST
+        self.request_handler_list += MODEL_DB_HANDLER_LIST
         self.request_handler_list += CHARACTER_HANDLER_LIST
         self.request_handler_list += JOB_SERVER_HANDLER_LIST
         self.request_handler_list += PROJECT_DB_HANDLER_LIST

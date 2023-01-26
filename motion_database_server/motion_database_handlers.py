@@ -32,6 +32,19 @@ from motion_database_server.base_handler import BaseDBHandler
 
 USER_ROLE_ADMIN = "admin"
 
+class MotionDBHandler(BaseDBHandler):
+    def has_access_to_collection(self, data):
+        collection_id = data.get("id", None)
+        if collection_id is None:
+            return False
+        token = data.get("token", None)
+        if token is None:
+            return False
+        owner_id = self.motion_database.get_owner_of_collection(collection_id)
+        request_user_id = self.motion_database.get_user_id_from_token(token)
+        role = self.motion_database.get_user_role(request_user_id)
+        return request_user_id == owner_id or role == USER_ROLE_ADMIN
+
 class GetMotionHandler(BaseDBHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
@@ -470,7 +483,7 @@ class GetCollectionHandler(BaseDBHandler):
             self.finish()
 
 
-class ReplaceCollectionHandler(BaseDBHandler):
+class ReplaceCollectionHandler(MotionDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -478,16 +491,10 @@ class ReplaceCollectionHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             print(input_str)
             input_data = json.loads(input_str)
-            if "id" in input_data and "token" in input_data:
+            if self.has_access_to_collection(input_data):
                 collection_id = input_data["id"]
-                token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_collection(collection_id)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                role = self.motion_database.get_user_role(request_user_id)
-                if request_user_id == owner_id or role == USER_ROLE_ADMIN:
-                    collection_id = input_data["id"]
-                    self.motion_database.replace_collection(input_data, collection_id)
-                    success = True
+                self.motion_database.replace_collection(input_data, collection_id)
+                success = True
             else:
                 print("Error: has no access rights")
             
@@ -503,7 +510,7 @@ class ReplaceCollectionHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class RemoveCollectionHandler(BaseDBHandler):
+class RemoveCollectionHandler(MotionDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -511,17 +518,11 @@ class RemoveCollectionHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             print(input_str)
             input_data = json.loads(input_str)
-            if "id" in input_data and "token" in input_data:
-                collection_id = input_data["id"]
-                token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_collection(collection_id)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                role = self.motion_database.get_user_role(request_user_id)
-                if request_user_id == owner_id or role == USER_ROLE_ADMIN:
-                    self.motion_database.remove_collection_by_id(input_data["id"])
-                    success = True
-                else:
-                    print("Error: has no access rights")
+            if self.has_access_to_collection(input_data):
+                self.motion_database.remove_collection_by_id(input_data["id"])
+                success = True
+            else:
+                print("Error: has no access rights")
             response_dict = dict()
             response_dict["success"] = success
             response = json.dumps(response_dict)

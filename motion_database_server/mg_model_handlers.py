@@ -130,7 +130,7 @@ class DownloadMotionModelHandler(BaseDBHandler):
             print(input_str)
 
             input_data = json.loads(input_str)
-            data, cluster_tree_data, skeleton_name = self.motion_database.get_model_by_id(input_data["model_id"])
+            data, cluster_tree_data, skeleton_name = self.motion_database.get_motion_primitive_model_by_id(input_data["model_id"])
             if data is not None:
                 self.write(data)
             else:
@@ -151,7 +151,7 @@ class DownloadClusterTreeHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            data, cluster_tree_data, skeleton_name = self.motion_database.get_model_by_id(input_data["model_id"])
+            data, cluster_tree_data, skeleton_name = self.motion_database.get_motion_primitive_model_by_id(input_data["model_id"])
             result_str = ""
             if cluster_tree_data is not None and cluster_tree_data != b'\x00':
                 result_str = cluster_tree_data
