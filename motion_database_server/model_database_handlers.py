@@ -96,6 +96,11 @@ class RemoveModelHandler(ModelDBHandler):
 
 
 class DownloadModelHandler(ModelDBHandler):
+
+    def set_default_headers(self):
+        super(DownloadModelHandler, self).set_default_headers()
+        self.set_header('Content-Type', 'application/octet-stream')
+
     @tornado.gen.coroutine
     def post(self):
         try:
