@@ -11,7 +11,6 @@ from motion_database_server.model_database import ModelDatabase
 class MGModelDatabase(ModelDatabase): 
     graph_table = "graphs"
     def __init__(self) -> None:
-        super().__init__()
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
 
@@ -43,7 +42,7 @@ class MGModelDatabase(ModelDatabase):
         else:
             print("Error in get model data",m_id)
         return data, cluster_tree_data, skeleton_name
-        
+
     def get_motion_primitive_sample(self, model_id):
         mv = None
         if model_id not in self._mp_buffer:
