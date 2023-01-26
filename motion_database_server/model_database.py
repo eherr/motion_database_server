@@ -27,7 +27,7 @@ class ModelDatabase:
     def replace_model(self, m_id, data):
         self.tables[self.model_table].update_record(m_id, data)
 
-    def upload_model(self,data):
+    def upload_model(self, data):
         record_data = dict()
         if "format" not in data:
             data["format"] = "mm"

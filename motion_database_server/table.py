@@ -91,18 +91,28 @@ class Table():
         return data, modified_data_cols
 
     def update_record(self, entry_id, input_data):
+        input_data = self.filter_columns(input_data)
         data, modified_data_cols = self.write_data_columns(input_data)
         if len(modified_data_cols) > 0:
             self.delete_files_of_record([("ID",entry_id)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "ID", entry_id)
 
     def update_record_by_name(self, entry_name, input_data):
+        input_data = self.filter_columns(input_data)
         data, modified_data_cols = self.write_data_columns(input_data)
         if len(modified_data_cols) > 0:
             self.delete_files_of_record([("name",entry_name)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "name", entry_name)
 
+    def filter_columns(self, input_data):
+        new_data = dict()
+        for key in self.cols:
+            if key in input_data:
+                new_data[key] = input_data[key]
+        return new_data
+
     def create_record(self, input_data):
+        input_data = self.filter_columns(input_data)
         input_data, modified_data_cols = self.write_data_columns(input_data)
         col_keys = []
         cols_values = []
@@ -141,6 +151,10 @@ class Table():
         if record is not None:
             value = record[0]
         return value
+
+    def set_value_of_column_by_id(self, entry_id, col_name, new_value):
+        input_data ={col_name: new_value}
+        self.update_record(entry_id, input_data)
 
     def get_data_cols(self):
         return self.data_cols
