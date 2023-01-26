@@ -93,12 +93,16 @@ EXPERIMENTS_TABLE = [("name",TEXT_T), # need to be unique
                     ("collection",INT_T), 
                     ("skeleton",INT_T),  
                     ("owner",INT_T),     # user id 
-                    ("codeURL",TEXT_T),   
-                    ("cmd",TEXT_T),   
-                    ("hyperparameters",TEXT_T), 
-                    ("imageURL",TEXT_T),    
-                    ("resourceConfig",TEXT_T),   
-                    ("logURL",TEXT_T)] 
+                     #optional
+                    ("clusterConfig",TEXT_T), # image, reosurces, start cmd
+                    ("codeURL",TEXT_T),  
+
+                    ("config",TEXT_T),   
+                    ("model",INT_T),  #result
+                    ("logFile",TEXT_T),
+                    ("logFields",TEXT_T),
+                    ("externalURL",TEXT_T)
+                    ] 
 TABLES2 = dict()
 TABLES2["collections"] = COLLECT_TABLE
 TABLES2["skeletons"] = SKELETON_TABLE
@@ -140,7 +144,8 @@ TABLES3["models"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",TEXT_T), 
-                    ("metaData",TEXT_T)]
+                    ("metaData",TEXT_T),
+                    ("format",TEXT_T)]
 TABLES3["graphs"] = [("name",TEXT_T),
                     ("skeleton",INT_T), 
                     ("data",TEXT_T)]
