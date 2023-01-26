@@ -51,8 +51,9 @@ class AddModelHandler(ModelDBHandler):
             response_dict = dict()
             success = False
             if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
+                input_data["data"] = base64.b64decode(input_data["data"])
                 new_id = self.motion_database.upload_model(input_data)
-                response_dict["id"] =new_id
+                response_dict["id"] = new_id
                 success = True
             else:
                 print("Error: did not find expected input data")
@@ -127,6 +128,10 @@ class ReplaceModelHandler(ModelDBHandler):
             if self.has_access(input_data):
                 success = True
                 m_id = input_data["model_id"]
+                if "data" in input_data:
+                    input_data["data"] = base64.b64decode(input_data["data"])
+                if "metaData" in input_data:
+                    input_data["metaData"] = base64.b64decode(input_data["metaData"])
                 self.motion_database.replace_model(m_id, input_data)
             response_dict["success"] = success
             response = json.dumps(response_dict)

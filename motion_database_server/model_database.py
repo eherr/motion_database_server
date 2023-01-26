@@ -28,10 +28,9 @@ class ModelDatabase:
         self.tables[self.model_table].update_record(m_id, data)
 
     def upload_model(self, data):
-        record_data = dict()
         if "format" not in data:
             data["format"] = "mm"
-        return self.tables[self.model_table].create_record(record_data)
+        return self.tables[self.model_table].create_record(data)
 
     def get_owner_of_model(self, model_id):
         collection_id = self.tables[self.model_table].get_value_of_column_by_id(model_id, "collection")

@@ -160,18 +160,6 @@ class UserDatabase(DatabaseWrapper):
     def remove_user(self, user_id):
         self.delete_entry_by_id(self.user_table, user_id)
 
-    def is_valid_user(self, session):
-        if self.enforce_access_rights and "user_id" in session and "token" in session:
-            #token = bytes(session["token"], "utf-8")
-            token = session["token"]
-            payload = self.jwt.decode(token, self.server_secret)
-            print("decoded", payload)
-            if "user" in payload:
-                return payload["user_id"] == session["user_id"]
-            else:
-                return False
-        else:
-            return not self.enforce_access_rights
 
     def get_user_list(self):
         return self.tables[self.user_table].get_record_list(["ID", "name", "role"])
@@ -256,13 +244,17 @@ class UserDatabase(DatabaseWrapper):
 
     def check_rights(self, session):
         if self.enforce_access_rights and "user" in session and "token" in session:
+            print(session["user"])
             token = session["token"]
-            role = self.get_user_role(session["user"])
+            #role = self.get_user_role(session["user"])
             payload = self.jwt.decode(token, self.server_secret)
+            print(payload)
             if "username" in payload:
                 return payload["username"] == session["user"]
+            elif "user_name" in payload:
+                return payload["user_name"] == session["user"]
             else:
-                return role == USER_ROLE_ADMIN
+                return False
         else:
             return not self.enforce_access_rights
     
