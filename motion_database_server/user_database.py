@@ -32,6 +32,9 @@ from motion_database_server.table import Table
 
 JWT_ALGORITHM = 'HS256'
 
+
+USER_ROLE_ADMIN = "admin"
+
 INT_T = "INTERGER"
 BLOB_T = "BLOB"
 TEXT_T = "TEXT"
@@ -254,11 +257,12 @@ class UserDatabase(DatabaseWrapper):
     def check_rights(self, session):
         if self.enforce_access_rights and "user" in session and "token" in session:
             token = session["token"]
+            role = self.get_user_role(session["user"])
             payload = self.jwt.decode(token, self.server_secret)
             if "username" in payload:
                 return payload["username"] == session["user"]
             else:
-                return False
+                return role == USER_ROLE_ADMIN
         else:
             return not self.enforce_access_rights
     
