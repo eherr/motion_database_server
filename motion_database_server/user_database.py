@@ -251,6 +251,17 @@ class UserDatabase(DatabaseWrapper):
                     owner = input_data["owner"]
         return owner, public
 
+    def check_rights(self, session):
+        if self.enforce_access_rights and "user" in session and "token" in session:
+            token = session["token"]
+            payload = self.jwt.decode(token, self.server_secret)
+            if "username" in payload:
+                return payload["username"] == session["user"]
+            else:
+                return False
+        else:
+            return not self.enforce_access_rights
+    
     def send_email(self, user, reciever, subject, message_text):
         """TODO """
         return
