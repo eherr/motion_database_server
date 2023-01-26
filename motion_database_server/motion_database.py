@@ -391,7 +391,3 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, CharacterStorage, FileSt
             return None
         return self.get_owner_of_collection(collection_id)
        
-    def get_owner_of_skeleton(self, skeleton_name):
-        return self.tables[self.skeleton_table].get_value_of_column_by_name(skeleton_name, "owner")
-
-

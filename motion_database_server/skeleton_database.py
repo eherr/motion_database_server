@@ -101,3 +101,7 @@ class SkeletonDatabase(object):
 
     def remove_skeleton(self, name):
         self.tables[self.skeleton_table].delete_record_by_name(name)
+    
+    def get_owner_of_skeleton(self, skeleton_name):
+        return self.tables[self.skeleton_table].get_value_of_column_by_name(skeleton_name, "owner")
+
