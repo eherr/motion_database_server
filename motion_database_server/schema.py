@@ -90,6 +90,7 @@ USER_GROUPS_TABLE = [("name",TEXT_T), # need to be unique
             ("owner",INT_T),     # user id
             ("users",TEXT_T)]   #  list of user ids 
 EXPERIMENTS_TABLE = [("name",TEXT_T), # need to be unique
+                    ("project",INT_T), 
                     ("collection",INT_T), 
                     ("skeleton",INT_T),  
                     ("owner",INT_T),     # user id 
