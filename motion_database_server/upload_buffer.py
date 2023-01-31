@@ -26,7 +26,7 @@ class UploadBuffer:
         self.buffer = dict()
 
     def is_complete(self, name):
-        return self.buffer[name]["n_parts"] == len(self.upload_buffer[name]["parts"])
+        return self.buffer[name]["n_parts"] == len(self.buffer[name]["parts"])
 
     def get_data(self, name):
         b_data= None
@@ -44,7 +44,7 @@ class UploadBuffer:
 
 
     def update_buffer(self, name, part_idx, n_parts, base64_data_str):
-        if name not in self.upload_buffer:
+        if name not in self.buffer:
             state = dict()
             state["parts"] = dict()
             state["n_parts"] = n_parts

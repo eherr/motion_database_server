@@ -194,8 +194,8 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, Charact
         self.upload_buffer.update_buffer(name, part_idx, n_parts,base64_data_str)
         if self.upload_buffer.is_complete(name):
             #self._insert_motion_from_buffer_to_db(name, collection, skeleton_name, meta_data, is_processed)
-            base64_data_str = self.buffer.get_data(name)
-            self.delete_data(name)
+            base64_data_str = self.upload_buffer.get_data(name)
+            self.upload_buffer.delete_data(name)
 
             #extract n frames
             data = base64.decodebytes(base64_data_str.encode('utf-8'))

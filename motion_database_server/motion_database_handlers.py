@@ -200,12 +200,14 @@ class UploadMotionHandler(BaseDBHandler):
                 meta_data = bz2.compress(meta_data)
             data = input_data["data"]
             #data = base64.decodebytes(data.encode('utf-8'))
-            res_str = self.motion_database.upload_motion(part_idx, n_parts, collection,
+            new_id = self.motion_database.upload_motion(part_idx, n_parts, collection,
                                                 input_data["skeleton_name"],
                                                 input_data["name"],
-                                                input_data["data"],
+                                                data,
                                                 meta_data, is_processed)
-            if res_str is not None:
+            if new_id is not None:
+                response = {"id":new_id}
+                res_str = json.dumps(response)
                 self.write(res_str)
             else:
                 self.write("done")
