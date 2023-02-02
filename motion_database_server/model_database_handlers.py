@@ -27,8 +27,8 @@ class GetModelList(ModelDBHandler):
             input_data = json.loads(input_str)
             collection = None
             collection = input_data.get("collection", None)
-            model_format = input_data.get("format", "mm")
-            skeleton = input_data.get("skeleton", "")
+            model_format = input_data.get("format", None)
+            skeleton = input_data.get("skeleton", None)
             models = []
             if collection is not None:
                 models = self.motion_database.get_model_list_by_collection(collection, skeleton, model_format)

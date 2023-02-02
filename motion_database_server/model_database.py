@@ -5,11 +5,13 @@
 class ModelDatabase:
     model_table = "models"    
     
-    def get_model_list_by_collection(self, collection, skeleton="", format="mm"):
-        filter_conditions =[("collection",str(collection)), ("format", format)]
-        if skeleton != "":
+    def get_model_list_by_collection(self, collection, skeleton=None, format=None):
+        filter_conditions =[("collection",str(collection))]
+        if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
-        r = self.query_table(self.model_table, ["ID","name"], filter_conditions)
+        if format is not None:
+            filter_conditions+=[("format", format)]
+        r = self.query_table(self.model_table, ["ID","name", "format"], filter_conditions)
         return r
 
     def delete_model_by_id(self, m_id):
