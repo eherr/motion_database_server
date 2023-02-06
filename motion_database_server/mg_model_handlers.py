@@ -18,12 +18,10 @@ class GetModelListHandler(BaseDBHandler):
                 collection = input_data["collection"]
             if "collection_id" in input_data:
                 collection = input_data["collection_id"]
-            skeleton_name = ""
-            if "skeleton" in input_data:
-                skeleton_name = input_data["skeleton"]
+            skeleton = input_data.get("skeleton", None)
             models = []
             if collection is not None:
-                models = self.motion_database.get_model_list_by_collection(collection, skeleton_name)
+                models = self.motion_database.get_model_list_by_collection(collection, skeleton)
             models_str = json.dumps(models)
             self.write(models_str)
         except Exception as e:
@@ -368,7 +366,7 @@ class GetTimeFunctionHandler(BaseDBHandler):
 
             input_data = json.loads(input_str)
             m_id = input_data["clip_id"]
-            data, meta_data, skeleton_name = self.motion_database.get_preprocessed_data_by_id(m_id)
+            data, meta_data, skeleton_name = self.motion_database.get_motion_by_id(m_id)
             if meta_data is not None and meta_data != b"x00" and meta_data != "":
                 meta_data = bz2.decompress(meta_data)
                 meta_data = bson.loads(meta_data)
