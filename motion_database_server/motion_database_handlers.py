@@ -51,13 +51,7 @@ class GetMotionHandler(BaseDBHandler):
         print("get motion",input_str)
         start = time.time()
         input_data = json.loads(input_str)
-        is_processed = False
-        if "is_processed" in input_data:
-            is_processed = input_data["is_processed"]
-        if is_processed:
-            data, meta_data, skeleton_type = self.motion_database.get_preprocessed_data_by_id(input_data["clip_id"])
-        else:
-            data, meta_data, skeleton_type = self.motion_database.get_motion_by_id(input_data["clip_id"])
+        data, meta_data, skeleton_type = self.motion_database.get_motion_by_id(input_data["clip_id"])
         
         self.write(data)
 
@@ -72,11 +66,9 @@ class GetMotionInfoHandler(BaseDBHandler):
         print("get motion info",input_str)
         start = time.time()
         input_data = json.loads(input_str)
-        is_processed = False
         columns = []
         clip_ids = []
-        if "is_processed" in input_data:
-            is_processed = input_data["is_processed"]
+        is_processed = int(input_data.get("is_processed",0))
         if "columns" in input_data:
             columns = input_data["columns"]
         if "clip_ids" in input_data:
@@ -135,13 +127,7 @@ class DownloadAnnotationHandler(BaseDBHandler):
             print("get annotation", input_str)
             input_data = json.loads(input_str)
             m_id = input_data["clip_id"]
-            is_processed = False
-            if "is_processed" in input_data:
-                is_processed = input_data["is_processed"]
-            if is_processed:
-                data, meta_data, skeleton_name = self.motion_database.get_preprocessed_data_by_id(m_id)
-            else:
-                data, meta_data, skeleton_name = self.motion_database.get_motion_by_id(m_id)
+            data, meta_data, skeleton_name = self.motion_database.get_motion_by_id(m_id)
 
             if meta_data is not None and meta_data != b"x00" and meta_data != "":
                 try:
@@ -176,26 +162,24 @@ class UploadMotionHandler(BaseDBHandler):
                 return
             collection = input_data["collection"]
             res_str = ""
-            is_processed = False
-            if "is_processed" in input_data:
-                is_processed = input_data["is_processed"]
-            meta_data = b"x00"
+            is_processed = int(input_data.get("is_processed",0))
+            print("upload motion", is_processed)
+            meta_data = None
             if "meta_data" in input_data:
                 try:
                     meta_data = json.loads(input_data["meta_data"])
                     if is_processed and "time_function" in meta_data:
-                        is_processed = True
+                        is_processed = 1
                     else:
-                        is_processed = False
+                        is_processed = 0
                 except:
                     print("Warning: could not read meta data of",input_data["name"])
-                    meta_data = b"x00"
-                    is_processed = False
+                    meta_data = None
+                    is_processed = 0
             if "data" in input_data:
                 n_parts = input_data["n_parts"]
                 part_idx = input_data["part_idx"]
-            print("upload motion", is_processed, input_data["is_processed"])
-            if meta_data!= b"x00":
+            if meta_data is not None:
                 meta_data = bson.dumps(meta_data)
                 meta_data = bz2.compress(meta_data)
             data = input_data["data"]
@@ -263,9 +247,7 @@ class ReplaceMotionHandler(BaseDBHandler):
                 self.write("Done")
                 return
             result_str = ""
-            is_processed = False
-            if "is_processed" in input_data:
-                is_processed = input_data["is_processed"]
+            is_processed = int(input_data.get("is_processed",0))
             name = None
             if "name" in input_data:
                 name = input_data["name"]
@@ -287,20 +269,14 @@ class ReplaceMotionHandler(BaseDBHandler):
             if "data" in input_data:
                 motion_data = bson.dumps(input_data["data"])
                 motion_data = bz2.compress(motion_data)
-            if is_processed:
-                result_str = self.motion_database.replace_preprocessed_data(input_data["motion_id"],
+            
+            result_str = self.motion_database.replace_motion(input_data["motion_id"],
                                                                 collection,
                                                                 skeleton_name,
                                                                 name,
                                                                 motion_data,
-                                                                meta_data)
-            else:
-                result_str = self.motion_database.replace_motion(input_data["motion_id"],
-                                                                collection,
-                                                                skeleton_name,
-                                                                name,
-                                                                motion_data,
-                                                                meta_data)
+                                                                meta_data, 
+                                                                is_processed)
 
             if result_str is not None:
                 self.write(result_str)
@@ -332,14 +308,8 @@ class DeleteMotionHandler(BaseDBHandler):
                     print("Error: has no access rights")
                     self.write("Done")
                     return
-                is_processed = False
-                if "is_processed" in input_data:
-                    is_processed = input_data["is_processed"]
-                print("delete",m_id, is_processed)
-                if is_processed:
-                    self.motion_database.delete_preprocessed_data(m_id)
-                else:
-                    self.motion_database.delete_motion_by_id(m_id)
+                print("delete",m_id)
+                self.motion_database.delete_motion_by_id(m_id)
             self.write("Done")
 
         except Exception as e:
@@ -359,18 +329,15 @@ class GetMotionListHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             motions = []
-            skeleton_name = input_data.get("skeleton","")
+            skeleton_name = input_data.get("skeleton",None)
             collection_id = None
             if "collection" in input_data:
                 collection_id = input_data["collection_id"]
             elif "collection_id" in input_data:
                 collection_id = input_data["collection_id"]
             if collection_id is not None:
-                is_processed = input_data.get("is_processed", 0)
-                if is_processed:
-                    motions = self.motion_database.get_preprocessed_data_list_by_collection(collection_id, skeleton_name)
-                else:
-                    motions = self.motion_database.get_motion_list_by_collection(collection_id, skeleton_name)
+                is_processed = int(input_data.get("is_processed", 0))
+                motions = self.motion_database.get_motion_list_by_collection(collection_id, skeleton_name, is_processed)
                     
             motions_str = json.dumps(motions)
             self.write(motions_str)
@@ -570,9 +537,10 @@ class GetMotionListByNameHandler(BaseDBHandler):
             input_data = json.loads(input_str)
             if "name" in input_data:
                 name = input_data["name"]
-                skeleton = input_data.get("skeleton", "")
+                skeleton = input_data.get("skeleton", None)
                 exact_match = input_data.get("exact_match", False)
-                collection = self.motion_database.get_motion_list_by_name(name, skeleton, exact_match)
+                is_processed = int(input_data.get("is_processed", None))
+                collection = self.motion_database.get_motion_list_by_name(name, skeleton, is_processed, exact_match)
                 collection_str = ""
                 if collection is not None:
                     collection_str = json.dumps(collection)

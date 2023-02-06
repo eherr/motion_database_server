@@ -40,7 +40,7 @@ class MotionDatabaseExporter:
                 print("parent", parent_id)
         for skeleton_name in self.skeletons:
             self.export_motion_data(skeleton_name, out_dir+os.sep+"raw", parent=parent_id)
-            self.export_processed_motion_data(skeleton_name, out_dir+os.sep+"processed", parent=parent_id)
+            #self.export_processed_motion_data(skeleton_name, out_dir+os.sep+"processed", parent=parent_id)
 
     def export_skeletons(self, out_dir):
         for skeleton_name in self.skeletons:
@@ -109,7 +109,7 @@ class MotionDatabaseExporter:
 
     def export_processed_collection_data_to_folder(self, c_id, skeleton_name, directory):
         skeleton = self.load_skeleton(skeleton_name)
-        motion_list = self.get_preprocessed_data_list_by_collection(c_id, skeleton_name)
+        motion_list = self.get_motion_list_by_collection(c_id, skeleton_name, processed=1)
         if motion_list is None:
             print("could not find motions")
             return
@@ -123,44 +123,13 @@ class MotionDatabaseExporter:
         count = 1
         for motion_id, name in motion_list:
             print("download motion", str(count)+"/"+str(n_motions), name)
-            self.export_preprocessed_data(skeleton, motion_id, name, directory, export_annotation=True)
+            self.export_motion_clip(skeleton, motion_id, name, directory, export_annotation=True)
             count+=1
 
 
     def export_motion_clip(self, skeleton, motion_id, name, directory, export_annotation=False):
         print("export clip")
         data, meta_data, skeleton_name = self.get_motion_by_id(motion_id)
-        if data is None:
-            return
-        motion_dict = extract_compressed_bson(data)
-        motion_vector = MotionVector()
-        motion_vector.from_custom_db_format(motion_dict)
-        try:
-            bvh_str = get_bvh_string(skeleton, motion_vector.frames)
-            filename = directory+os.sep+name
-            if not name.endswith(".bvh"):
-                filename += ".bvh"
-            with open(filename, "wt") as out_file:
-                out_file.write(bvh_str)
-            print("wrote file", filename)
-        except Exception as e :
-            print("Error: writing file", motion_id, name, e.args)
-            pass
-            return
-        if export_annotation and meta_data is not None and meta_data != b"x00" and meta_data != "":
-            meta_filename = filename+".meta"
-            try:
-                meta_data = bz2.decompress(meta_data)
-                meta_data = bson.loads(meta_data)
-                save_json_file(meta_data, meta_filename)
-            except:
-                print("Error could not decode",meta_data)
-                pass
-
-
-    def export_preprocessed_data(self, skeleton, motion_id, name, directory, export_annotation=False):
-        print("export clip")
-        data, meta_data, skeleton_name = self.get_preprocessed_data_by_id(motion_id)
         if data is None:
             return
         motion_dict = extract_compressed_bson(data)

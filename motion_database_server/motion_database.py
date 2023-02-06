@@ -40,7 +40,6 @@ from motion_database_server.schema import DBSchema, TABLES3
 class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, CharacterStorage, FileStorage, ExperimentDatabase):
     collections_table = "collections"
     motion_table = "motion_clips"
-    preprocessed_table = "preprocessed_data"
     def __init__(self, schema=None, server_secret=None, data_dir="data"):
         if schema is None:
             schema = DBSchema(TABLES3)
@@ -101,12 +100,10 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, Charact
             print("Error in get motion by id", m_id)
         return data, meta_data, skeleton_name
       
-    def get_motion_info(self, columns, clip_ids, is_processed=False):
+    def get_motion_info(self, columns, clip_ids):
         if "ID" not in columns:
             columns.append("ID")
         table = self.motion_table
-        if is_processed:
-            table = self.preprocessed_table
         records = self.query_table(table, columns, [("ID",clip_ids)])
         result = dict()
         for r in records:
@@ -120,8 +117,7 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, Charact
             result[r_id] = row
         return result
 
-
-    def replace_motion(self, m_id, collection, skeleton_name, name, motion_data, meta_data):
+    def replace_motion(self, m_id, collection, skeleton_name, name, motion_data, meta_data, processed=None):
         record_data = dict()
         if collection is not None:
             record_data["collection"] = collection
@@ -133,83 +129,51 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, Charact
             record_data["data"] = motion_data
         if meta_data is not None:
             record_data["metaData"] = meta_data
+        if processed is not None:
+            record_data["processed"] = processed
         self.tables[self.motion_table].update_record(m_id, record_data)
 
-    def get_preprocessed_data_by_id(self, m_id):
-        r = self.tables[self.preprocessed_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
-        data = None
-        meta_data = None
-        
-        if r is not None:
-            data = r[0]
-            meta_data = r[1]
-            skeleton_name = r[2]
-        else:
-            print("Error in get processed data", m_id)
-        return data, meta_data, skeleton_name
-
-    def replace_preprocessed_data(self, m_id, collection, skeleton_name, name, motion_data, meta_data):
-        record_data = dict()
-        if collection != "":
-            record_data["collection"] = collection
-        if skeleton_name != "":
-            record_data["skeleton"] = skeleton_name
-        if name != "":
-            record_data["name"] = name
-        if motion_data != "":
-            record_data["data"] = motion_data
-        if meta_data != "":
-            record_data["metaData"] = meta_data
-        self.tables[self.preprocessed_table].update_record(m_id, record_data)
-    
     def get_collection_by_id(self, collection_id):
         return self.tables[self.collections_table].get_record_by_id(collection_id,["ID","name","type", "parent"])
 
     def replace_collection(self, input_data, collection_id):
         self.tables[self.collections_table].update_record(collection_id, input_data)
        
-    def get_motion_list_by_collection(self, collection, skeleton=""):
+    def get_motion_list_by_collection(self, collection, skeleton=None, processed=None):
         filter_conditions =[("collection",str(collection))]
-        if skeleton != "":
+        if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
+        if processed is not None:
+            filter_conditions+=[("processed", processed)]
         return self.tables[self.motion_table].get_record_list( ["ID","name"], filter_conditions)
 
-    def get_motion_list_by_name(self, name, skeleton="", exact_match=False):
+    def get_motion_list_by_name(self, name, skeleton=None, processed=None, exact_match=False):
         filter_conditions =[]
-        if skeleton != "":
+        if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
+        if processed is not None:
+            filter_conditions+=[("processed", processed)]
         r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
         return self.tables[self.motion_table].search_records_by_name(name, ["ID","name"], exact_match, filter_conditions)
 
-    def get_preprocessed_data_list_by_collection(self, collection, skeleton=""):
-        filter_conditions =[("collection",str(collection))]
-        if skeleton != "":
-            filter_conditions+=[("skeleton", skeleton)]
-        r = self.query_table(self.preprocessed_table, ["ID","name"], filter_conditions)
-        return r
-
-
-    def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, base64_data_str, meta_data, is_processed=False):
+   
+    def upload_motion(self, part_idx, n_parts, collection, skeleton_name, name, base64_data_str, meta_data, processed=0):
         print("upload motion", name)
         self.upload_buffer.update_buffer(name, part_idx, n_parts,base64_data_str)
-        if self.upload_buffer.is_complete(name):
-            #self._insert_motion_from_buffer_to_db(name, collection, skeleton_name, meta_data, is_processed)
-            base64_data_str = self.upload_buffer.get_data(name)
-            self.upload_buffer.delete_data(name)
+        if not self.upload_buffer.is_complete(name):
+            return
+        base64_data_str = self.upload_buffer.get_data(name)
+        self.upload_buffer.delete_data(name)
 
-            #extract n frames
-            data = base64.decodebytes(base64_data_str.encode('utf-8'))
-            data = extract_compressed_bson(data)
-            n_frames = 0
-            if "poses" in data:
-                n_frames = len(data["poses"])
-            data = bson.dumps(data)
-            data = bz2.compress(data)
-
-            if is_processed:
-                return self.insert_preprocessed_data(collection, skeleton_name, name, data, meta_data)
-            else:
-                return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames)
+        #extract n frames
+        data = base64.decodebytes(base64_data_str.encode('utf-8'))
+        data = extract_compressed_bson(data)
+        n_frames = 0
+        if "poses" in data:
+            n_frames = len(data["poses"])
+        data = bson.dumps(data)
+        data = bz2.compress(data)
+        return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames, processed)
 
     def load_motion_vector_from_bvh_str(self, bvh_str):
         bvh_reader = get_bvh_from_str(bvh_str)
@@ -225,32 +189,22 @@ class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, Charact
         n_frames = len(data["poses"])
         data = bson.dumps(data)
         data = bz2.compress(data)
-        self.insert_motion(collection, skeleton_name, name, data, "", n_frames)
+        self.insert_motion(collection, skeleton_name, name, data, None, n_frames)
             
-    def insert_motion(self, collection, skeleton_name, name, motion_data, meta_data, n_frames):
+    def insert_motion(self, collection, skeleton_name, name, motion_data, meta_data, n_frames, processed=0):
         record_data = dict()
         record_data["name"] = name
         record_data["collection"] = collection
         record_data["skeleton"] = skeleton_name
         record_data["numFrames"] = n_frames
         record_data["data"] = motion_data
-        record_data["metaData"] = meta_data
+        if meta_data is not None:
+            record_data["metaData"] = meta_data
+        record_data["processed"] = processed
         return self.tables[self.motion_table].create_record(record_data)
-
-    def insert_preprocessed_data(self, collection, skeleton_name, name, motion_data, meta_data):
-        record_data = dict()
-        record_data["name"] = name
-        record_data["collection"] = collection
-        record_data["skeleton"] = skeleton_name
-        record_data["data"] = motion_data
-        record_data["metaData"] = meta_data
-        return self.tables[self.preprocessed_table].create_record(record_data)
 
     def delete_motion_by_id(self, motion_id):
         return self.tables[self.motion_table].delete_record_by_id(motion_id)
-
-    def delete_preprocessed_data(self, motion_id):
-        return self.tables[self.preprocessed_table].delete_record_by_id(motion_id)
 
     def add_new_collection_by_id(self, name, collection_type, parent_id, owner, public=0):
         owner = max(0, owner)

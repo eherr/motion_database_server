@@ -132,15 +132,8 @@ TABLES3["motion_clips"] = [("name",TEXT_T),
                     ("subject",TEXT_T),
                     ("numFrames",INT_T), 
                     ("format",TEXT_T), 
-                    ("source",TEXT_T)]
-TABLES3["preprocessed_data"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",TEXT_T), 
-                    ("metaData",TEXT_T), 
-                    ("numFrames",INT_T), 
-                    ("format",TEXT_T), 
-                    ("source",TEXT_T)]
+                    ("source",TEXT_T),  
+                    ("processed",INT_T)]
 TABLES3["models"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
