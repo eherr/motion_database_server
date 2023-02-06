@@ -79,15 +79,16 @@ class Table():
     def write_data_columns(self, input_data):
         modified_data_cols = []
         data = dict()
-        for key in self.cols:
-            if key in input_data:
-                if key in self.data_cols:
-                    filename = self.db.save_hashed_file(self.table_name, key, input_data[key])
-                    print("write",self.table_name, filename)
-                    data[key] = filename
-                    modified_data_cols.append(key)
-                else:
-                    data[key] = input_data[key]
+        for key in input_data:
+            if key not in self.cols:
+                continue
+            if key in self.data_cols:
+                filename = self.db.save_hashed_file(self.table_name, key, input_data[key])
+                print("write",self.table_name, filename)
+                data[key] = filename
+                modified_data_cols.append(key)
+            else:
+                data[key] = input_data[key]
         return data, modified_data_cols
 
     def update_record(self, entry_id, input_data):
