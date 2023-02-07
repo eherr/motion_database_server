@@ -97,7 +97,7 @@ class MGModelDatabase(ModelDatabase):
         records = self.tables[self.graph_table].get_record_by_id(graph_id, ["data"])
         data = None
         if len(records) > 0:
-            data = records[0][0]
+            data = records[0]
             data = bz2.decompress(data)
             data = bson.loads(data)
         return data
