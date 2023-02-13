@@ -13,7 +13,7 @@ class MGModelDatabase(ModelDatabase):
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
 
-    def upload_motion_model(self, name, collection, skeleton, model_data, meta_data=None, model_format="mm"):
+    def upload_motion_model(self, name, collection, skeleton, model_data, meta_data=None, model_format="mpm"):
         record_data = dict()
         record_data["name"] = name
         record_data["collection"] = collection
