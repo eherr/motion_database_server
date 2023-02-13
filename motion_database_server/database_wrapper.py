@@ -88,6 +88,21 @@ class DatabaseWrapper(object):
         cur.execute(query_str, tuple(values))
         self.con.commit()
 
+    def update_entry_by_condition(self, table_name, data, conditions):
+        query_str = ''' UPDATE '''+table_name+''' SET ''' 
+        n_entries = len(data)
+        count = 0
+        for key, value in data.items():
+            query_str +=self.get_filter_str((key, value))
+            count+=1
+            if n_entries > count:
+                query_str +=", "
+        query_str += self.get_condition_str(conditions, None)
+        query_str +=  ";"
+        cur = self.con.cursor()
+        cur.execute(query_str)
+        self.con.commit()
+
     def get_max_id(self, table):
         query_str = "SELECT max(ID) as ID FROM " + table + " ;"
         return pd.read_sql_query(query_str, self.con)
@@ -157,7 +172,7 @@ class DatabaseWrapper(object):
             else:
                 query_str = c[0]+" = '"+c[1]+"'"
         elif type(c[1]) == list:
-            list_str = "".join([str(v)+", " for v in c[1][:-1]])
+            list_str = "".join(["'"+str(v)+"', " for v in c[1][:-1]])
             list_str = "(" + list_str
             list_str +=  str(c[1][-1]) + ")"
             query_str = c[0]+" IN " + list_str

@@ -33,13 +33,14 @@ from motion_database_server.experiment_database import ExperimentDatabase
 from anim_utils.animation_data.motion_vector import MotionVector
 from motion_database_server.character_storage import CharacterStorage
 from motion_database_server.file_storage import FileStorage
+from motion_database_server.model_types_database import ModleTypesDatabase
 from motion_database_server.upload_buffer import UploadBuffer
 from motion_database_server.schema import DBSchema, TABLES3
 
 
-class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, CharacterStorage, FileStorage, ExperimentDatabase):
+class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, CharacterStorage, FileStorage, ExperimentDatabase, ModleTypesDatabase):
     collections_table = "collections"
-    motion_table = "motion_clips"
+    motion_table = "motions"
     def __init__(self, schema=None, server_secret=None, data_dir="data"):
         if schema is None:
             schema = DBSchema(TABLES3)

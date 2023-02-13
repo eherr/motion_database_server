@@ -104,6 +104,14 @@ EXPERIMENTS_TABLE = [("name",TEXT_T), # need to be unique
                     ("logFields",TEXT_T),
                     ("externalURL",TEXT_T)
                     ] 
+MODEL_TYPES_TABLE = [("name",TEXT_T), # need to be unique
+            ("requirements",TEXT_T)
+]
+MODEL_EVAL_SCRIPTS_TABLE = [("modelType",TEXT_T),
+            ("engine",TEXT_T),
+            ("script",INT_T), 
+            ("requirements",TEXT_T)
+]
 TABLES2 = dict()
 TABLES2["collections"] = COLLECT_TABLE
 TABLES2["skeletons"] = SKELETON_TABLE
@@ -124,7 +132,7 @@ TABLES3["skeletons"] = [("name",TEXT_T),
                     ("metaData",TEXT_T),
                     ("owner",TEXT_T)
                     ]
-TABLES3["motion_clips"] = [("name",TEXT_T),
+TABLES3["motions"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",TEXT_T), 
@@ -153,6 +161,8 @@ TABLES3["projects"] = [("name",TEXT_T),
                     ("public",INT_T)]  
 TABLES3["project_members"] = [("user",INT_T), ("project",INT_T)]  
 TABLES3["experiments"] = EXPERIMENTS_TABLE
+TABLES3["model_types"] = MODEL_TYPES_TABLE
+TABLES3["model_evaluation_scripts"] = MODEL_EVAL_SCRIPTS_TABLE
 TABLES3["meshes"] = [("name",TEXT_T), 
                     ("skeleton",INT_T),
                     ("data",TEXT_T)]

@@ -37,6 +37,7 @@ from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_
 from motion_database_server.job_server_handlers import JOB_SERVER_HANDLER_LIST
 from motion_database_server.project_database_handlers import PROJECT_DB_HANDLER_LIST
 from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HANDLER_LIST
+from motion_database_server.model_type_database_handlers import MODEL_TYPE_DB_HANDLER_LIST
 
 class ServiceBase:
     service_name = str
@@ -71,6 +72,7 @@ class MotionDatabaseService(ServiceBase):
         self.request_handler_list += JOB_SERVER_HANDLER_LIST
         self.request_handler_list += PROJECT_DB_HANDLER_LIST
         self.request_handler_list += EXPERIMENT_DB_HANDLER_LIST
+        self.request_handler_list += MODEL_TYPE_DB_HANDLER_LIST
         self.server_registry = dict()
 
     def get_server_status(self, name):

@@ -46,6 +46,15 @@ class Table():
                 records[i] = self.read_data_columns(r, data_col_idx)
         return records
     
+    def get_full_record_by_name(self, entry_name):
+        record = self.get_record_by_name(entry_name, self.cols)
+        if record is None:
+            return None
+        data = dict()
+        for i, k in enumerate(self.cols):
+            data[k] = record[i]
+        return data
+        
     def get_record_by_name(self, entry_name, cols=None):
         if cols is None:
             cols = self.cols
@@ -58,11 +67,33 @@ class Table():
             record = self.read_data_columns(record, col_idx)
         return record
 
+    def get_full_record_by_id(self, entry_id):
+        cols = self.tables[self.table_name].cols
+        record = self.tables[self.table_name].get_record_by_id(entry_id, cols)
+        if record is None:
+            return None
+        data = dict()
+        for i, k in enumerate(cols):
+            data[k] = record[i]
+        return data
+
+
     def get_record_by_id(self, entry_id, cols=None):
         if cols is None:
             cols = self.cols
         filter_conditions =  [("ID", entry_id)]
         records = self.db.query_table(self.table_name, cols,filter_conditions)
+        record = None
+        if len(records) > 0:
+            record = list(records[0])
+            col_idx = [i for i, c in enumerate(cols) if c in self.data_cols]
+            record = self.read_data_columns(record, col_idx)
+        return record
+
+    def get_record_by_condition(self, conditions, cols=None):
+        if cols is None:
+            cols = self.cols
+        records = self.db.query_table(self.table_name, cols,conditions)
         record = None
         if len(records) > 0:
             record = list(records[0])
@@ -92,6 +123,7 @@ class Table():
         return data, modified_data_cols
 
     def update_record(self, entry_id, input_data):
+        
         input_data = self.filter_columns(input_data)
         if len(input_data) < 0:
             return
@@ -108,6 +140,15 @@ class Table():
         if len(modified_data_cols) > 0:
             self.delete_files_of_record([("name",entry_name)], modified_data_cols)
         self.db.update_entry(self.table_name, data, "name", entry_name)
+   
+    def update_record_by_condition(self, conditions, input_data):
+        input_data = self.filter_columns(input_data)
+        if len(input_data) < 0:
+            return
+        data, modified_data_cols = self.write_data_columns(input_data)
+        if len(modified_data_cols) > 0:
+            self.delete_files_of_record(conditions, modified_data_cols)
+        self.db.update_entry_by_condition(self.table_name, data, conditions)
 
     def filter_columns(self, input_data):
         new_data = dict()
