@@ -148,9 +148,6 @@ TABLES3["models"] = [("name",TEXT_T),
                     ("data",TEXT_T), 
                     ("metaData",TEXT_T),
                     ("format",TEXT_T)]
-TABLES3["graphs"] = [("name",TEXT_T),
-                    ("skeleton",INT_T), 
-                    ("data",TEXT_T)]
 TABLES3["users"] = [("name",TEXT_T),
                     ("password",TEXT_T), 
                     ("role",TEXT_T), 
