@@ -52,9 +52,10 @@ class GetExperimentList(BaseDBHandler):
         try:
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
+           project = input_data.get("project",None)
            collection = input_data.get("collection",None)
            skeleton = input_data.get("skeleton",None)
-           exp_list = self.app.motion_database.get_experiment_list(collection, skeleton)
+           exp_list = self.app.motion_database.get_experiment_list(project, collection, skeleton)
            response = json.dumps(exp_list)
            self.write(response)
         except Exception as e:
@@ -232,4 +233,135 @@ EXPERIMENT_DB_HANDLER_LIST = [(r"/experiments", GetExperimentList),
                             (r"/experiments/remove", RemoveExperimentHandler),
                             (r"/experiments/info", GetExperimentInfoHandler),
                              (r"/experiments/log", GetExperimentLogHandler),
+                            ]
+
+                 
+class GetExperimentInputList(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            input_data = json.loads(input_str)
+            experiment = input_data["experiment"]
+            data_loader_list = self.app.motion_database.get_experiment_input_list(experiment)
+            response = json.dumps(data_loader_list)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
+
+
+class AddExperimentInputHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           token = input_data["token"]
+           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
+           role = self.app.motion_database.get_user_role(request_user_id)
+           
+           response_dict = dict()
+           response_dict["success"] = False
+           if role == "admin":
+               new_id = self.app.motion_database.create_experiment_input(input_data)
+               response_dict["id"] = new_id
+               response_dict["success"] = True
+           response = json.dumps(response_dict)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+class EditExperimentInputHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           print(input_str)
+           input_data = json.loads(input_str)
+           dti_id = input_data["experiment_input_id"]
+           token = input_data["token"]
+           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
+           role = self.app.motion_database.get_user_role(request_user_id)
+           success = False
+           if role == "admin":
+                self.app.motion_database.edit_experiment_input(dti_id, input_data)
+                success = True
+           response_dict = dict()
+           response_dict["success"] = success
+           response = json.dumps(response_dict)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+     
+
+class RemoveExperimentInputHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           dti_id = input_data["experiment_input_id"]
+           token = input_data["token"]
+           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
+           role = self.app.motion_database.get_user_role(request_user_id)
+           success = False
+           if role == "admin":
+                self.app.motion_database.remove_experiment_input(dti_id, engine)
+                success = True
+           response_dict = dict()
+           response_dict["success"] = success
+           response = json.dumps(response_dict)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+class GetExperimentInputInfoHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            print(input_str)
+            input_data = json.loads(input_str)
+            dti_id = input_data["experiment_input_id"]
+            info = self.app.motion_database.get_experiment_input_info(dti_id, engine)
+            response_dict = dict()
+            success = False
+            if info is not None:
+                response_dict.update(info)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
+EXPERIMENT_DB_HANDLER_LIST += [
+                            (r"/experiments/inputs", GetExperimentInputList),
+                            (r"/experiments/inputs/add", AddExperimentInputHandler),
+                            (r"/experiments/inputs/edit", EditExperimentInputHandler),
+                            (r"/experiments/inputs/remove", RemoveExperimentInputHandler),
+                            (r"/experiments/inputs/info", GetExperimentInputInfoHandler)
                             ]
