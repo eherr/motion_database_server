@@ -148,6 +148,10 @@ TABLES3["models"] = [("name",TEXT_T),
                     ("data",TEXT_T), 
                     ("metaData",TEXT_T),
                     ("format",TEXT_T)]
+TABLES3["model_graphs"] = [("name",TEXT_T),
+                    ("project",INT_T), 
+                    ("skeleton",INT_T), 
+                    ("data",TEXT_T)]
 TABLES3["users"] = [("name",TEXT_T),
                     ("password",TEXT_T), 
                     ("role",TEXT_T), 
@@ -160,9 +164,7 @@ TABLES3["project_members"] = [("user",INT_T), ("project",INT_T)]
 TABLES3["experiments"] = EXPERIMENTS_TABLE
 TABLES3["model_types"] = MODEL_TYPES_TABLE
 TABLES3["model_evaluation_scripts"] = MODEL_EVAL_SCRIPTS_TABLE
-TABLES3["meshes"] = [("name",TEXT_T), 
-                    ("skeleton",INT_T),
-                    ("data",TEXT_T)]
+
 
 
 
