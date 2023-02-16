@@ -1,3 +1,25 @@
+#!/usr/bin/env python
+#
+# Copyright 2019 DFKI GmbH.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to permit
+# persons to whom the Software is furnished to do so, subject to the
+# following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+# NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+# USE OR OTHER DEALINGS IN THE SOFTWARE.
 import json
 import bson
 import bz2
@@ -14,7 +36,7 @@ class ModelDBHandler(BaseDBHandler):
         token = data.get("token", None)
         if token is None:
             return False
-        owner_id = self.motion_database.get_owner_of_model(m_id)
+        owner_id = self.motion_database.get_owner_of_file(m_id)
         request_user_id = self.motion_database.get_user_id_from_token(token)
         role = self.app.motion_database.get_user_role(request_user_id)
         return request_user_id == owner_id or role == USER_ROLE_ADMIN
@@ -25,13 +47,13 @@ class GetModelList(ModelDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            collection = None
             collection = input_data.get("collection", None)
-            model_format = input_data.get("format", None)
+            data_type = input_data.get("format", None)
             skeleton = input_data.get("skeleton", None)
             models = []
             if collection is not None:
-                models = self.motion_database.get_model_list_by_collection(collection, skeleton, model_format)
+                models = self.motion_database.get_file_list_by_collection(collection, skeleton, data_type, is_model=True)
+                print(models)
             models_str = json.dumps(models)
             self.write(models_str)
         except Exception as e:
@@ -52,7 +74,9 @@ class AddModelHandler(ModelDBHandler):
             success = False
             if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
                 input_data["data"] = base64.b64decode(input_data["data"])
-                new_id = self.motion_database.upload_model(input_data)
+                if "format" in input_data:
+                    input_data["dataType"] = input_data["format"]
+                new_id = self.motion_database.create_file(input_data)
                 response_dict["id"] = new_id
                 success = True
             else:
@@ -80,7 +104,7 @@ class RemoveModelHandler(ModelDBHandler):
             if self.has_access(input_data):
                 m_id = input_data["model_id"]
                 print("Error: has no access rights")
-                self.motion_database.delete_model_by_id(m_id)
+                self.motion_database.delete_file_by_id(m_id)
                 success = True
 
             response_dict["success"] = success
@@ -108,7 +132,7 @@ class DownloadModelHandler(ModelDBHandler):
             print(input_str)
 
             input_data = json.loads(input_str)
-            data = self.motion_database.get_model_by_id(input_data["model_id"])
+            data = self.motion_database.get_file_by_id(input_data["model_id"])
             if data is not None:
                 self.write(data)
             else:
@@ -137,7 +161,7 @@ class ReplaceModelHandler(ModelDBHandler):
                     input_data["data"] = base64.b64decode(input_data["data"])
                 if "metaData" in input_data:
                     input_data["metaData"] = base64.b64decode(input_data["metaData"])
-                self.motion_database.replace_model(m_id, input_data)
+                self.motion_database.replace_file(m_id, input_data)
             response_dict["success"] = success
             response = json.dumps(response_dict)
             self.write(response)
