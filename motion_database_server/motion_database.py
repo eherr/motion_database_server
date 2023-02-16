@@ -27,18 +27,19 @@ import base64
 from motion_database_server.utils import get_bvh_from_str, extract_compressed_bson
 from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.skeleton_database import SkeletonDatabase
+from motion_database_server.model_graph_database import ModelGraphDatabase
 from motion_database_server.mg_model_database import MGModelDatabase
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from motion_database_server.experiment_database import ExperimentDatabase
 from anim_utils.animation_data.motion_vector import MotionVector
 from motion_database_server.character_storage import CharacterStorage
 from motion_database_server.file_storage import FileStorage
-from motion_database_server.model_types_database import ModleTypesDatabase
+from motion_database_server.model_types_database import ModelTypesDatabase
 from motion_database_server.upload_buffer import UploadBuffer
 from motion_database_server.schema import DBSchema, TABLES3
 
 
-class MotionDatabase(ProjectDatabase, SkeletonDatabase, MGModelDatabase, CharacterStorage, FileStorage, ExperimentDatabase, ModleTypesDatabase):
+class MotionDatabase(ProjectDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage, FileStorage, ExperimentDatabase, ModelTypesDatabase):
     collections_table = "collections"
     motion_table = "motions"
     def __init__(self, schema=None, server_secret=None, data_dir="data"):
