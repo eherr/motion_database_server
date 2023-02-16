@@ -74,18 +74,11 @@ class GetMotionInfoHandler(BaseDBHandler):
         if "clip_ids" in input_data:
             clip_ids = input_data["clip_ids"]
         if len(clip_ids) > 0 and len(columns):
-            data = self.motion_database.get_motion_info(columns, clip_ids, is_processed)
+            data = self.motion_database.get_motion_info(columns, clip_ids)
             json_str = json.dumps(data)
             self.write(json_str)
         delta = time.time()- start
         print("processed query in", delta, "seconds")
-
-def load_bvh_str(filepath):
-    bvh_str = ""
-    with open(filepath, "r") as infile:
-        for line in infile.readlines():
-            bvh_str += line
-    return bvh_str
 
 
 class DownloadBVHHandler(BaseDBHandler):
@@ -351,182 +344,6 @@ class GetMotionListHandler(BaseDBHandler):
 
 
 
-class NewCollectionHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            success = False
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            if "token" in input_data and "name" in input_data and "type" in input_data and "parent_id" in input_data:
-                token = input_data["token"]
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                response_dict = dict()
-                if request_user_id >= 0:
-                    name = input_data["name"]
-                    collection_type = input_data["type"]
-                    parent_id = input_data["parent_id"]
-                    owner = request_user_id
-                    if "owner" in input_data:
-                        owner = input_data["owner"]
-                    response_dict["id"] = self.motion_database.add_new_collection_by_id(name, collection_type, parent_id, owner)
-                    success = True
-                else:
-                    print("Error: no access rights")
-            else:
-                print("Error: not all parameters were provided to create a collection entry")
-            
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class GetCollectionListHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_user_access_rights(input_data)
-            col_str = "[]"
-            if "parent_id" in input_data:
-                parent_id = input_data["parent_id"]
-                cols = self.motion_database.get_collection_list_by_id(parent_id, owner, public)
-                cols_str = json.dumps(cols)
-            self.write(cols_str)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class GetCollectionTreeHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_user_access_rights(input_data)
-            cols_str = "{}"
-            if "parent_id" in input_data:
-                parent_id = input_data["parent_id"]
-                col_tree = self.motion_database.get_collection_tree(parent_id, owner, public)
-                cols_str = json.dumps(col_tree)
-            self.write(cols_str)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class GetCollectionHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            print("get collection", input_str)
-            input_data = json.loads(input_str)
-            if "id" in input_data:
-                collection_id = input_data["id"]
-                collection = self.motion_database.get_collection_by_id(collection_id)
-                collection_str = ""
-                if collection is not None:
-                    collection_str = json.dumps(collection)
-                self.write(collection_str)
-            else:
-                self.write("Missing name or id parameter")
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
-class ReplaceCollectionHandler(MotionDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            success = False
-            input_str = self.request.body.decode("utf-8")
-            print(input_str)
-            input_data = json.loads(input_str)
-            if self.has_access_to_collection(input_data):
-                collection_id = input_data["id"]
-                self.motion_database.replace_collection(input_data, collection_id)
-                success = True
-            else:
-                print("Error: has no access rights")
-            
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-class RemoveCollectionHandler(MotionDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            success = False
-            input_str = self.request.body.decode("utf-8")
-            print(input_str)
-            input_data = json.loads(input_str)
-            if self.has_access_to_collection(input_data):
-                self.motion_database.remove_collection_by_id(input_data["id"])
-                success = True
-            else:
-                print("Error: has no access rights")
-            response_dict = dict()
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()      
-
-
-class GetCollectionsByNameHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            print("get collection", input_str)
-            input_data = json.loads(input_str)
-            if "name" in input_data:
-                name = input_data["name"]
-                exact_match = input_data.get("exact_match", False)
-                collection = self.motion_database.get_collection_by_name(name, exact_match=exact_match)
-                collection_str = ""
-                if collection is not None:
-                    collection_str = json.dumps(collection)
-                self.write(collection_str)
-            else:
-                self.write("Missing name parameter")
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
 
 class GetMotionListByNameHandler(BaseDBHandler):
     @tornado.gen.coroutine
@@ -557,19 +374,11 @@ class GetMotionListByNameHandler(BaseDBHandler):
 
 
 MOTION_DB_HANDLER_LIST = [(r"/get_motion_list", GetMotionListHandler),
-                            (r"/get_collection_list", GetCollectionListHandler),
                             (r"/get_motion", GetMotionHandler),
                             (r"/get_motion_info", GetMotionInfoHandler),
                             (r"/download_bvh", DownloadBVHHandler), 
                             (r"/download_annotation", DownloadAnnotationHandler),
-                            (r"/get_collection", GetCollectionHandler),
                             (r"/replace_motion", ReplaceMotionHandler),
-                            (r"/replace_collection", ReplaceCollectionHandler),
                             (r"/upload_motion", UploadMotionHandler),
                             (r"/upload_bvh_clip", UploadBVHClipHandler),
-                            (r"/delete_motion", DeleteMotionHandler),
-                            (r"/create_new_collection", NewCollectionHandler),
-                            (r"/remove_collection", RemoveCollectionHandler),
-                            (r"/get_collections_by_name", GetCollectionsByNameHandler),
-                            (r"/get_motion_list_by_name", GetMotionListByNameHandler),
-                            (r"/get_collection_tree", GetCollectionTreeHandler)]
+                            (r"/delete_motion", DeleteMotionHandler)]
