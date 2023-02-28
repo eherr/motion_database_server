@@ -50,7 +50,7 @@ class UploadCharacterModelHandler(BaseDBHandler):
             
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
+            has_access = self.project_database.check_rights(input_data)
             success = False
             if has_access:
                 if "name" in input_data and "skeleton_type" in input_data and "data" in input_data:

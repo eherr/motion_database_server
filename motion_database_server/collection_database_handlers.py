@@ -34,7 +34,7 @@ class MotionDBHandler(BaseDBHandler):
         if token is None:
             return False
         owner_id = self.motion_database.get_owner_of_collection(collection_id)
-        request_user_id = self.motion_database.get_user_id_from_token(token)
+        request_user_id = self.project_database.get_user_id_from_token(token)
         role = self.motion_database.get_user_role(request_user_id)
         return request_user_id == owner_id or role == USER_ROLE_ADMIN
 
@@ -49,7 +49,7 @@ class NewCollectionHandler(BaseDBHandler):
             input_data = json.loads(input_str)
             if "token" in input_data and "name" in input_data and "type" in input_data and "parent_id" in input_data:
                 token = input_data["token"]
-                request_user_id = self.motion_database.get_user_id_from_token(token)
+                request_user_id = self.project_database.get_user_id_from_token(token)
                 response_dict = dict()
                 if request_user_id >= 0:
                     name = input_data["name"]

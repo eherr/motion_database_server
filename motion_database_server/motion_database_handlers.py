@@ -41,7 +41,7 @@ class MotionDBHandler(BaseDBHandler):
         if token is None:
             return False
         owner_id = self.motion_database.get_owner_of_collection(collection_id)
-        request_user_id = self.motion_database.get_user_id_from_token(token)
+        request_user_id = self.project_database.get_user_id_from_token(token)
         role = self.motion_database.get_user_role(request_user_id)
         return request_user_id == owner_id or role == USER_ROLE_ADMIN
 
@@ -148,7 +148,7 @@ class UploadMotionHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
+            has_access = self.project_database.check_rights(input_data)
             if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")
@@ -203,7 +203,7 @@ class UploadBVHClipHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             print("call upload from bvh")
             input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
+            has_access = self.project_database.check_rights(input_data)
             if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")
@@ -234,7 +234,7 @@ class ReplaceMotionHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
+            has_access = self.project_database.check_rights(input_data)
             if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")
@@ -295,8 +295,8 @@ class DeleteMotionHandler(BaseDBHandler):
                 m_id = input_data["clip_id"]
                 token = input_data["token"]
                 owner_id = self.motion_database.get_owner_of_motion(m_id)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                role = self.app.motion_database.get_user_role(request_user_id)
+                request_user_id = self.project_database.get_user_id_from_token(token)
+                role = self.project_database.get_user_role(request_user_id)
                 if request_user_id != owner_id and role != USER_ROLE_ADMIN:
                     print("Error: has no access rights")
                     self.write("Done")

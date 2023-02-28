@@ -94,7 +94,7 @@ class NewSkeletonHandler(BaseDBHandler):
             success = False
             if "name" in input_data and "data" in input_data and "token" in input_data:
                 token = input_data["token"]
-                request_user_id = self.app.motion_database.get_user_id_from_token(token)
+                request_user_id = self.project_database.get_user_id_from_token(token)
                 if request_user_id > -1:
                     data = None
                     if "data_type" in input_data and input_data["data_type"] == "bvh":
@@ -138,8 +138,8 @@ class ReplaceSkeletonHandler(BaseDBHandler):
                 skeleton_name = input_data["name"]
                 token = input_data["token"]
                 owner_id = self.motion_database.get_owner_of_skeleton(skeleton_name)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                user_role = self.app.motion_database.get_user_role(request_user_id)
+                request_user_id = self.project_database.get_user_id_from_token(token)
+                user_role = self.project_database.get_user_role(request_user_id)
                 if request_user_id == owner_id or user_role.lower() == "admin":
                     data = None
                     meta_data = None
@@ -181,8 +181,8 @@ class RemoveSkeletonHandler(BaseDBHandler):
                 skeleton_name = input_data["name"]
                 token = input_data["token"]
                 owner_id = self.motion_database.get_owner_of_skeleton(skeleton_name)
-                request_user_id = self.motion_database.get_user_id_from_token(token)
-                user_role = self.app.motion_database.get_user_role(request_user_id)
+                request_user_id = self.project_database.get_user_id_from_token(token)
+                user_role = self.project_database.get_user_role(request_user_id)
                 if request_user_id == owner_id or user_role.lower() == "admin":
                     self.motion_database.remove_skeleton(skeleton_name)
                     success = True

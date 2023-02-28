@@ -21,7 +21,7 @@ class GetModelListHandler(BaseDBHandler):
             skeleton = input_data.get("skeleton", None)
             models = []
             if collection is not None:
-                models = self.motion_database.get_model_list_by_collection(collection, skeleton)
+                models = self.motion_database.get_file_list_by_collection(collection, skeleton, is_model=True)
             models_str = json.dumps(models)
             self.write(models_str)
         except Exception as e:
@@ -43,7 +43,7 @@ class UploadMotionModelHandler(BaseDBHandler):
             input_data = json.loads(input_str)
             output_str = "done"
             print("upload motion primitive model")
-            if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
+            if "collection" in input_data and "data" in input_data and self.project_database.check_rights(input_data):
                 mm_data_str = bson.dumps(input_data["data"])
                 mm_data_str = bz2.compress(mm_data_str)
                 data = dict()
@@ -74,9 +74,9 @@ class DeleteModelHandler(BaseDBHandler):
             m_id = input_data["model_id"]
             token = input_data["token"]
             owner_id = self.motion_database.get_owner_of_model(m_id)
-            request_user_id = self.motion_database.get_user_id_from_token(token)
-            role = self.app.motion_database.get_user_role(request_user_id)
-            has_access = self.motion_database.check_rights(input_data)
+            request_user_id = self.project_database.get_user_id_from_token(token)
+            role = self.project_database.get_user_role(request_user_id)
+            has_access = self.project_database.check_rights(input_data)
             if request_user_id != owner_id and role != USER_ROLE_ADMIN:
                  print("Error: has no access rights")
             self.motion_database.delete_model_by_id(input_data["model_id"])
@@ -97,7 +97,7 @@ class UploadClusterTreeHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             # print(input_str)
             input_data = json.loads(input_str)
-            has_access = self.motion_database.check_rights(input_data)
+            has_access = self.project_database.check_rights(input_data)
             if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")

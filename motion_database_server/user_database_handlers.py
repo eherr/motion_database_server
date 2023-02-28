@@ -27,7 +27,7 @@ from motion_database_server.base_handler import BaseDBHandler
 
 class GetUserListHandler(BaseDBHandler):
     def get(self):
-        user_list = self.app.motion_database.get_user_list()
+        user_list = self.project_database.get_user_list()
         response = json.dumps(user_list)
         self.write(response)
 
@@ -42,7 +42,7 @@ class AddUserHandler(BaseDBHandler):
            email = input_data["email"]
            role = input_data["role"] # maybe limit the role
            shared_access_groups = "[]"
-           success = self.app.motion_database.create_user(user_name, password, email, role, shared_access_groups)
+           success = self.project_database.create_user(user_name, password, email, role, shared_access_groups)
 
            response_dict = dict()
            response_dict["success"] = success
@@ -61,18 +61,18 @@ class EditUserHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token)
+           request_user_id = self.project_database.get_user_id_from_token(token)
            user_id = request_user_id
            if "user_id" in input_data:
                user_id = int(input_data["user_id"])
-           request_user_role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_role = self.project_database.get_user_role(request_user_id)
            success = False
            if user_id > -1 and (user_id == request_user_id or request_user_role.lower()=="admin"):
                if "role" in input_data and input_data["role"] == "admin" and request_user_role.lower() != "admin":
                    del input_data["role"]
                    print("Error: Cannot elevate role.")
                 
-               self.app.motion_database.edit_user(user_id, input_data)
+               self.project_database.edit_user(user_id, input_data)
                success = True
            response = dict()
            response["success"] = success
@@ -93,12 +93,12 @@ class RemoveUserHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            token = input_data["token"]
            user_id = input_data["user_id"]
-           requesting_user_id = self.app.motion_database.get_user_id_from_token(token)
+           requesting_user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if requesting_user_id > -1:
-               is_admin = self.app.motion_database.get_user_role(requesting_user_id) == "admin"
+               is_admin = self.project_database.get_user_role(requesting_user_id) == "admin"
                if is_admin or requesting_user_id == user_id:
-                   self.app.motion_database.remove_user(user_id)
+                   self.project_database.remove_user(user_id)
                    success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -118,7 +118,7 @@ class ResetUserPasswordHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            email = input_data["email"]
-           success = self.app.motion_database.reset_user_password(email)
+           success = self.project_database.reset_user_password(email)
            response_dict = dict()
            response_dict["success"] = success
            response = json.dumps(response_dict)
@@ -137,15 +137,15 @@ class GetUserInfoHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token)
+           request_user_id = self.project_database.get_user_id_from_token(token)
            user_id = request_user_id
            if "user_id" in input_data:
                user_id = int(input_data["user_id"])
-           request_user_role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_role = self.project_database.get_user_role(request_user_id)
            if user_id > -1 and (user_id == request_user_id or request_user_role.lower()=="admin"):
                response_dict = dict()
                response_dict["success"] = True
-               user_info = self.app.motion_database.get_user_info(user_id)
+               user_info = self.project_database.get_user_info(user_id)
                response_dict.update(user_info)
                response = json.dumps(response_dict)
                self.write(response)
@@ -173,7 +173,7 @@ class LoginHandler(BaseDBHandler):
         if "username" in input_data and "password" in input_data:
             user = input_data["username"]
             password = input_data["password"]
-            user_id = self.app.motion_database.authenticate_user(user, password)
+            user_id = self.project_database.authenticate_user(user, password)
         else:
             print("missing required fields")
         
@@ -183,8 +183,8 @@ class LoginHandler(BaseDBHandler):
             print("aunticated user", user_id)
             result_object["username"] = input_data["username"]
             playload = {"user_id": user_id, "username": input_data["name"]}
-            result_object["token"] = self.app.motion_database.generate_token(playload)
-            result_object["role"] = self.app.motion_database.get_user_role(user_id)
+            result_object["token"] = self.project_database.generate_token(playload)
+            result_object["role"] = self.project_database.get_user_role(user_id)
         else:
             print("failed to authenticate user")
         self.write(json.dumps(result_object))
@@ -207,8 +207,8 @@ class AuthenticateHandler(BaseDBHandler):
             print("aunticated user", user_id)
             result_object["username"] = input_data["username"]
             playload = {"user_id": user_id, "username": input_data["username"]}
-            result_object["token"] = self.app.motion_database.generate_token(playload)
-            result_object["role"] = self.app.motion_database.get_user_role(user_id)
+            result_object["token"] = self.project_database.generate_token(playload)
+            result_object["role"] = self.project_database.get_user_role(user_id)
         else:
             print("failed to authenticate user")
         self.write(json.dumps(result_object))

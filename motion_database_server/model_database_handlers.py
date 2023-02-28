@@ -37,8 +37,8 @@ class ModelDBHandler(BaseDBHandler):
         if token is None:
             return False
         owner_id = self.motion_database.get_owner_of_file(m_id)
-        request_user_id = self.motion_database.get_user_id_from_token(token)
-        role = self.app.motion_database.get_user_role(request_user_id)
+        request_user_id = self.project_database.get_user_id_from_token(token)
+        role = self.project_database.get_user_role(request_user_id)
         return request_user_id == owner_id or role == USER_ROLE_ADMIN
 
 class GetModelList(ModelDBHandler):
@@ -73,7 +73,7 @@ class AddModelHandler(ModelDBHandler):
             input_data = json.loads(input_str)
             response_dict = dict()
             success = False
-            if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
+            if "collection" in input_data and "data" in input_data and self.project_database.check_rights(input_data):
                 input_data["data"] = base64.b64decode(input_data["data"])
                 if "format" in input_data:
                     input_data["dataType"] = input_data["format"]

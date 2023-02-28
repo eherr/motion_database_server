@@ -55,9 +55,11 @@ class BaseHandler(tornado.web.RequestHandler):
         self.write(error_string)
 
 class BaseDBHandler(BaseHandler):
-    service_name = "MOTION_DB"
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
-        self.app = application.get_service_context(self.service_name)
+        self.app = application.get_service_context("MOTION_DB")
         self.db_path = self.app.db_path
         self.motion_database = self.app.motion_database
+        self.project_service = application.get_service_context("PROJECT_DB")
+        self.project_database = self.project_service.project_database
+

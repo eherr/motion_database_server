@@ -35,7 +35,7 @@ class StartClusterJobHandler(BaseDBHandler):
         try:
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
-           has_access = self.motion_database.check_rights(input_data)
+           has_access = self.project_database.check_rights(input_data)
            if not has_access:
                print("Error: no access rights")
                self.write("Error: no access right")
@@ -66,7 +66,7 @@ class StartMGServerHandler(BaseDBHandler):
         try:
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
-           has_access = self.motion_database.check_rights(input_data)
+           has_access = self.project_database.check_rights(input_data)
            if not has_access:
                 print("Error: no access rights")
                 self.write("Error: no access right")
@@ -103,7 +103,7 @@ class StartJobHandler(BaseDBHandler):
                     token = input_data["token"]
                     group_id = input_data["group_id"]
                     owner_id = server_info["owner_id"]
-                    request_user_id = self.app.motion_database.get_user_id_from_token(token)
+                    request_user_id = self.project_database.get_user_id_from_token(token)
                     if self.app.motion_database.is_user_in_group(group_id, request_user_id):
                         has_access = self.app.motion_database.has_access(group_id, owner_id)
                 else:
@@ -153,7 +153,7 @@ class RegisterJobServerHandler(BaseDBHandler):
            has_access = False
            if self.app.activate_user_authentification:
                token = input_data["token"]
-               data["owner_id"] = self.app.motion_database.get_user_id_from_token(token)
+               data["owner_id"] = self.project_database.get_user_id_from_token(token)
                has_access = True
            else:
                 has_access = True

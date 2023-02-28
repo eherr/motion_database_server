@@ -40,6 +40,8 @@ from motion_database_server.files_database_handlers import FILE_DB_HANDLER_LIST
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.model_database_handlers import MODEL_DB_HANDLER_LIST
 from motion_database_server.collection_database_handlers import COLLECTION_DB_HANDLER_LIST
+from motion_database_server.data_transform_handlers import DATA_TRANSFORM_HANDLER_LIST
+
 
 class ServiceBase:
     service_name = str
@@ -61,22 +63,24 @@ class MotionDatabaseService(ServiceBase):
             self.k8s_namespace = kube_config["namespace"]
         else:
             self.k8s_namespace = ""
-        self.motion_database = MotionFileDatabase(server_secret=self.server_secret)
-        self.motion_database.connect(self.db_path)
+        self.motion_database = MotionFileDatabase(data_dir="data",port=888)
+        self.motion_database.connect_to_database(self.db_path)
         self.motion_database.load_skeletons()
         self.request_handler_list = []
-        self.request_handler_list += USER_DB_HANDLER_LIST
+        #self.request_handler_list += USER_DB_HANDLER_LIST
         self.request_handler_list += SKELETON_DB_HANDLER_LIST
         self.request_handler_list += COLLECTION_DB_HANDLER_LIST
         self.request_handler_list += FILE_DB_HANDLER_LIST
         self.request_handler_list += MODEL_GRAPH_HANDLER_LIST
-        self.request_handler_list += PROJECT_DB_HANDLER_LIST
+        #self.request_handler_list += PROJECT_DB_HANDLER_LIST
         self.request_handler_list += EXPERIMENT_DB_HANDLER_LIST
+        self.request_handler_list += DATA_TRANSFORM_HANDLER_LIST
         # legacy
         self.request_handler_list += CHARACTER_HANDLER_LIST
         self.request_handler_list += MG_MODEL_HANDLER_LIST
         self.request_handler_list += MOTION_DB_HANDLER_LIST
         self.request_handler_list += MODEL_DB_HANDLER_LIST
+        
         
         self.server_registry = dict()
 

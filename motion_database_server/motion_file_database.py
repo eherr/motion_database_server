@@ -26,6 +26,7 @@ import bz2
 import base64
 from motion_database_server.utils import get_bvh_from_str, extract_compressed_bson
 from motion_database_server.project_database import ProjectDatabase
+from motion_database_server.database_wrapper import DatabaseWrapper
 from motion_database_server.files_database import FilesDatabase
 from motion_database_server.collection_database import CollectionDatabase
 from motion_database_server.skeleton_database import SkeletonDatabase
@@ -33,11 +34,17 @@ from motion_database_server.model_graph_database import ModelGraphDatabase
 from motion_database_server.mg_model_database import MGModelDatabase
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
 from motion_database_server.experiment_database import ExperimentDatabase
+from motion_database_server.data_transform_database import DataTansformDatabase
 from anim_utils.animation_data.motion_vector import MotionVector
 from motion_database_server.character_storage import CharacterStorage
 from motion_database_server.file_storage import FileStorage
 from motion_database_server.upload_buffer import UploadBuffer
 from motion_database_server.schema_v2 import DBSchema, TABLES
+from motion_database_server.table import Table
+from motion_db_interface import DataTransformRegistry
+from motion_database_server.utils import load_json_file
+from motion_db_interface.model_db_session import ModelDBSession
+
 
 def load_motion_vector_from_bvh_str(bvh_str):
     bvh_reader = get_bvh_from_str(bvh_str)
@@ -47,16 +54,26 @@ def load_motion_vector_from_bvh_str(bvh_str):
     motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
     return motion_vector
 
-class MotionFileDatabase(ProjectDatabase, CollectionDatabase, FileStorage, FilesDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage,  ExperimentDatabase):
+class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, FilesDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage,  ExperimentDatabase, DataTansformDatabase):
     
-    def __init__(self, schema=None, server_secret=None, data_dir="data"):
+    def __init__(self, schema=None, data_dir="data",port=8888):
         if schema is None:
             schema = DBSchema(TABLES)
+        self.schema =schema
+        self.tables = dict()
+        for name in self.schema.tables:
+            self.tables[name] = Table(self, name, self.schema.tables[name])
         SkeletonDatabase.__init__(self)
         FileStorage.__init__(self, data_dir)
         CharacterStorage.__init__(self, data_dir + os.sep +"characters")
         MGModelDatabase.__init__(self)
-        ProjectDatabase.__init__(self, schema, server_secret)
+        #ProjectDatabase.__init__(self, schema, server_secret)
+        #create local session for data transforms
+        session_file = "session.json"
+        if os.path.isfile(session_file):
+            session_data = load_json_file(session_file)
+            session = ModelDBSession("http://localhost:" + str(port) + "/", session_data)
+            self.data_transform_registry = DataTransformRegistry.get_instance(session, data_dir)
     
     def load_skeletons(self):
         self.skeletons = dict()

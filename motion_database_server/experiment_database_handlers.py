@@ -74,7 +74,7 @@ class AddExperimentHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           owner_id = self.app.motion_database.get_user_id_from_token(token)
+           owner_id = self.project_database.get_user_id_from_token(token)
            success = False
            response_dict = dict()
            if owner_id > -1:
@@ -101,7 +101,7 @@ class EditExperimentHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            experiment_id = input_data["experiment_id"]
            token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
+           user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
                owner_id = self.app.motion_database.get_experiment_owner(experiment_id)
@@ -128,7 +128,7 @@ class AppendExperimentLogHandler(BaseDBHandler):
            experiment_id = input_data["experiment_id"]
            token = input_data["token"]
            log_entry = input_data["log_entry"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
+           user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
                owner_id = self.app.motion_database.get_experiment_owner(experiment_id)
@@ -154,7 +154,7 @@ class RemoveExperimentHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            exp_id = input_data["experiment_id"]
            token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
+           user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
                owner_id = self.app.motion_database.get_experiment_owner(exp_id)
@@ -263,8 +263,8 @@ class AddExperimentInputHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            
            response_dict = dict()
            response_dict["success"] = False
@@ -290,8 +290,8 @@ class EditExperimentInputHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            dti_id = input_data["experiment_input_id"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.edit_experiment_input(dti_id, input_data)
@@ -316,8 +316,8 @@ class RemoveExperimentInputHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            dti_id = input_data["experiment_input_id"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.remove_experiment_input(dti_id, engine)

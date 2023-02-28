@@ -28,7 +28,7 @@ from motion_database_server.base_handler import BaseDBHandler
 
 class GetProjectListHandler(BaseDBHandler):
     def get(self):
-        project_list = self.app.motion_database.get_project_list()
+        project_list = self.project_database.get_project_list()
         response = json.dumps(project_list)
         self.write(response)
 
@@ -40,8 +40,8 @@ class GetProjectListHandler(BaseDBHandler):
            user_id = None
            if "token" in input_data:
                token = input_data["token"]
-               user_id = self.app.motion_database.get_user_id_from_token(token)
-           project_list = self.app.motion_database.get_project_list(user_id)
+               user_id = self.project_database.get_user_id_from_token(token)
+           project_list = self.project_database.get_project_list(user_id)
            response = json.dumps(project_list)
            self.write(response)
         except Exception as e:
@@ -58,7 +58,7 @@ class GetProjectMemberListHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            project_id = input_data["project_id"]
-           project_list = self.app.motion_database.get_project_member_list(project_id)
+           project_list = self.project_database.get_project_member_list(project_id)
            response = json.dumps(project_list)
            self.write(response)
         except Exception as e:
@@ -78,11 +78,11 @@ class AddProjectHandler(BaseDBHandler):
            project_name = input_data["project_name"]
            is_public= input_data["is_public"]
            token = input_data["token"]
-           owner_id = self.app.motion_database.get_user_id_from_token(token)
+           owner_id = self.project_database.get_user_id_from_token(token)
            success = False
            if owner_id > -1:
                print("create project", project_name)
-               self.app.motion_database.create_project(project_name, owner_id, is_public)
+               self.project_database.create_project(project_name, owner_id, is_public)
                success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -107,12 +107,12 @@ class EditProjectHandler(BaseDBHandler):
            public = input_data.get("is_public", None)
            token = input_data["token"]
            users = input_data["users"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
+           user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
-               owner_id = self.app.motion_database.get_project_owner(project_id)
+               owner_id = self.project_database.get_project_owner(project_id)
                if user_id == owner_id:
-                   self.app.motion_database.edit_project(project_id, project_name, public, users)
+                   self.project_database.edit_project(project_id, project_name, public, users)
                    success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -133,12 +133,12 @@ class RemoveProjectHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            project_id = input_data["project_id"]
            token = input_data["token"]
-           user_id = self.app.motion_database.get_user_id_from_token(token)
+           user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
-               owner_id = self.app.motion_database.get_project_owner(project_id)
+               owner_id = self.project_database.get_project_owner(project_id)
                if user_id == owner_id:
-                   self.app.motion_database.remove_project(project_id)
+                   self.project_database.remove_project(project_id)
                    success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -159,15 +159,15 @@ class GetUserProjectsHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token)
+           request_user_id = self.project_database.get_user_id_from_token(token)
            user_id = request_user_id
            if "user_id" in input_data:
                user_id = int(input_data["user_id"])
-           request_user_role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_role = self.project_database.get_user_role(request_user_id)
            if user_id > -1 and (user_id == request_user_id or request_user_role.lower()=="admin"):
                response_dict = dict()
                response_dict["success"] = True
-               project_list = self.app.motion_database.get_user_project_list(user_id)
+               project_list = self.project_database.get_user_project_list(user_id)
                response_dict["project_list"] = project_list
                print(response_dict)
                response = json.dumps(response_dict)
@@ -194,7 +194,7 @@ class GetProjectInfoHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             project_id = int(input_data["project_id"])
-            project_info = self.app.motion_database.get_project_info(project_id)
+            project_info = self.project_database.get_project_info(project_id)
             response_dict = dict()
             success = False
             if project_info is not None:

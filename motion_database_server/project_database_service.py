@@ -20,20 +20,24 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database_server.web_app_server import WebAppServer
-from motion_database_server.project_database_service import ProjectDatabaseService
-from motion_database_server.motion_database_service import MotionDatabaseService
-from motion_database_server.utils import load_json_file
+
+from motion_database_server.project_database import ProjectDatabase
+from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
+from motion_database_server.project_database_handlers import PROJECT_DB_HANDLER_LIST
+from motion_database_server.schema_v2 import DBSchema, TABLES
 
 
-def main(config):
-    server = WebAppServer(**config)
-    server.register_service(ProjectDatabaseService.service_name, ProjectDatabaseService(**config))
-    server.register_service(MotionDatabaseService.service_name, MotionDatabaseService(**config))
-    server.start()
+class ProjectDatabaseService(ProjectDatabase):
+    """ Wrapper for the Project Service class that can be registered as a service
+    """
+    service_name = "PROJECT_DB"
+    def __init__(self, **kwargs):
+        self.db_path = kwargs.get("db_path", r"./motion.db")
+        self.server_secret = kwargs.get("server_secret", None)
+        self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
+        self.activate_user_authentification = kwargs.get("activate_user_authentification", True)
+        schema = DBSchema(TABLES)
+        self.project_database = ProjectDatabase(schema, server_secret=self.server_secret)
+        self.project_database.connect(self.db_path)
+        self.request_handler_list = USER_DB_HANDLER_LIST + PROJECT_DB_HANDLER_LIST
 
-
-CONFIG_FILE = "db_server_config.json"
-if __name__ == "__main__":
-    config = load_json_file(CONFIG_FILE)
-    main(config)
