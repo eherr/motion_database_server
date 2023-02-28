@@ -55,7 +55,7 @@ class GetExperimentList(BaseDBHandler):
            project = input_data.get("project",None)
            collection = input_data.get("collection",None)
            skeleton = input_data.get("skeleton",None)
-           exp_list = self.app.motion_database.get_experiment_list(project, collection, skeleton)
+           exp_list = self.data_transform_service.get_experiment_list(project, collection, skeleton)
            response = json.dumps(exp_list)
            self.write(response)
         except Exception as e:
@@ -79,7 +79,7 @@ class AddExperimentHandler(BaseDBHandler):
            response_dict = dict()
            if owner_id > -1:
                input_data["owner"] = owner_id
-               new_id = self.app.motion_database.create_experiment(input_data)
+               new_id = self.data_transform_service.create_experiment(input_data)
                response_dict["id"] = new_id
                success = True
            response_dict["success"] = success
@@ -104,9 +104,9 @@ class EditExperimentHandler(BaseDBHandler):
            user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
-               owner_id = self.app.motion_database.get_experiment_owner(experiment_id)
+               owner_id = self.data_transform_service.get_experiment_owner(experiment_id)
                if user_id == owner_id:
-                   self.app.motion_database.edit_experiment(experiment_id, input_data)
+                   self.data_transform_service.edit_experiment(experiment_id, input_data)
                    success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -131,9 +131,9 @@ class AppendExperimentLogHandler(BaseDBHandler):
            user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
-               owner_id = self.app.motion_database.get_experiment_owner(experiment_id)
+               owner_id = self.data_transform_service.get_experiment_owner(experiment_id)
                if user_id == owner_id:
-                   self.app.motion_database.append_experiment_log(experiment_id, log_entry)
+                   self.data_transform_service.append_experiment_log(experiment_id, log_entry)
                    success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -157,9 +157,9 @@ class RemoveExperimentHandler(BaseDBHandler):
            user_id = self.project_database.get_user_id_from_token(token)
            success = False
            if user_id > -1:
-               owner_id = self.app.motion_database.get_experiment_owner(exp_id)
+               owner_id = self.data_transform_service.get_experiment_owner(exp_id)
                if user_id == owner_id:
-                    self.app.motion_database.remove_experiment(exp_id)
+                    self.data_transform_service.remove_experiment(exp_id)
                     success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -181,7 +181,7 @@ class GetExperimentInfoHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             exp_id = int(input_data["experiment_id"])
-            exp_info = self.app.motion_database.get_experiment_info(exp_id)
+            exp_info = self.data_transform_service.get_experiment_info(exp_id)
             response_dict = dict()
             success = False
             if exp_info is not None:
@@ -206,7 +206,7 @@ class GetExperimentLogHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             exp_id = int(input_data["experiment_id"])
-            result = self.app.motion_database.get_experiment_log(exp_id)
+            result = self.data_transform_service.get_experiment_log(exp_id)
             response_dict = dict()
             success = False
             if result is not None:
@@ -243,7 +243,7 @@ class GetExperimentInputList(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             experiment = input_data["experiment"]
-            data_loader_list = self.app.motion_database.get_experiment_input_list(experiment)
+            data_loader_list = self.data_transform_service.get_experiment_input_list(experiment)
             response = json.dumps(data_loader_list)
             self.write(response)
         except Exception as e:
@@ -269,7 +269,7 @@ class AddExperimentInputHandler(BaseDBHandler):
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
-               new_id = self.app.motion_database.create_experiment_input(input_data)
+               new_id = self.data_transform_service.create_experiment_input(input_data)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)
@@ -294,7 +294,7 @@ class EditExperimentInputHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                self.app.motion_database.edit_experiment_input(dti_id, input_data)
+                self.data_transform_service.edit_experiment_input(dti_id, input_data)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -320,7 +320,7 @@ class RemoveExperimentInputHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                self.app.motion_database.remove_experiment_input(dti_id, engine)
+                self.data_transform_service.remove_experiment_input(dti_id)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -341,7 +341,7 @@ class GetExperimentInputInfoHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             dti_id = input_data["experiment_input_id"]
-            info = self.app.motion_database.get_experiment_input_info(dti_id, engine)
+            info = self.data_transform_service.get_experiment_input_info(dti_id)
             response_dict = dict()
             success = False
             if info is not None:
