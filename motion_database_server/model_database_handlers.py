@@ -52,7 +52,8 @@ class GetModelList(ModelDBHandler):
             skeleton = input_data.get("skeleton", None)
             models = []
             if collection is not None:
-                models = self.motion_database.get_file_list_by_collection(collection, skeleton, data_type, is_model=True)
+                tags = ["model"]
+                models = self.motion_database.get_file_list(collection, skeleton, data_type, tags=tags)
                 print(models)
             models_str = json.dumps(models)
             self.write(models_str)

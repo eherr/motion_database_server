@@ -6,9 +6,8 @@ from morphablegraphs.motion_model.motion_primitive_wrapper import MotionPrimitiv
 from morphablegraphs.utilities import convert_to_mgrd_skeleton
 from motion_database_server.utils import extract_compressed_bson
 from anim_utils.animation_data.motion_vector import MotionVector
-from motion_database_server.model_database import ModelDatabase
 
-class MGModelDatabase(ModelDatabase): 
+class MGModelDatabase: 
     def __init__(self) -> None:
         self._mp_buffer = dict()
         self._mp_skeleton_type = dict()
@@ -19,19 +18,19 @@ class MGModelDatabase(ModelDatabase):
         record_data["collection"] = collection
         record_data["skeleton"] = skeleton
         record_data["data"] = model_data
-        record_data["format"] = model_format
+        record_data["dataType"] = model_format
         if meta_data is not None:
             record_data["metaData"] = meta_data
-        return self.tables[self.model_table].create_record(record_data)
+        return self.tables[self.files_table].create_record(record_data)
         
     def upload_cluster_tree(self, model_id, cluster_tree_data):
         record_data = dict()
         record_data["metaData"] = cluster_tree_data
-        self.tables[self.model_table].update_record(model_id, record_data)
+        self.tables[self.files_table].update_record(model_id, record_data)
 
 
     def get_motion_primitive_model_by_id(self, m_id):
-        r = self.tables[self.model_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
+        r = self.tables[self.files_table].get_record_by_id(m_id, ["data", "metaData", "skeleton"])
         skeleton_name = ""
         data = None
         if r is not None:
@@ -71,4 +70,3 @@ class MGModelDatabase(ModelDatabase):
         skeleton_type = self._mp_skeleton_type[model_id]
         motion_vector.skeleton = self.skeletons[skeleton_type]
         return motion_vector, skeleton_type
-

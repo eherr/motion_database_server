@@ -40,29 +40,33 @@ class FilesDatabase:
     files_table = "files"   
     data_types_table = "data_types"
     data_loader_table = "data_loaders"
-    data_transforms_table = "data_transforms"
-    data_transform_inputs_table = "data_transform_inputs"
+    tags_table = "tags"
+    data_type_taggings_table = "data_type_taggings"
     def __init__(self, tables_desc):
         self.tables_desc = tables_desc
         for name in self.tables_desc:
             self.tables[name] = Table(self, name, self.tables_desc[name])
 
-    def get_file_list_by_collection(self, collection, skeleton=None, dataType=None, is_model=None):
-        filter_conditions =[("collection",str(collection))]
+    def get_file_list(self, collection=None, skeleton=None, dataType=None, tags=None):
+        filter_conditions = []
+        intersection_list = []
         join_statement = None
         cols = ["ID","name", "dataType"]
+        if collection is not None:
+            filter_conditions+=[("collection", str(collection))]
         if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
         if dataType is not None:
             filter_conditions+=[("dataType", dataType)]
-        if is_model is not None:
+        if tags is not None:# join data types and tagging tables to filter data types based on tags
             join_statement = " LEFT JOIN "+self.data_types_table+" ON  "+self.files_table+".dataType = "+self.data_types_table+".name"
+            join_statement += " LEFT JOIN "+self.data_type_taggings_table+" ON "+self.data_types_table+".name = "+ self.data_type_taggings_table + ".dataType"
+            #filter_conditions += [(self.data_types_table+".isModel", int(is_model)) ]
+            cols = [self.files_table+".ID",self.files_table+".name", self.files_table+".dataType"]
             
-            filter_conditions += [(self.data_types_table+".isModel", int(is_model)) ]
-            cols = [self.files_table+".ID",self.files_table+".name", "dataType"]
-
-
-        return self.tables[self.files_table].get_record_list(cols, filter_conditions=filter_conditions, join_statement=join_statement)
+            for tag in tags:
+                intersection_list += [(self.data_type_taggings_table+".tag", tag) ]
+        return self.tables[self.files_table].get_record_list(cols, filter_conditions=filter_conditions,intersection_list=intersection_list, join_statement=join_statement, distinct=True)
     
     def create_file(self, data):
         return self.tables[self.files_table].create_record(data)
@@ -73,7 +77,7 @@ class FilesDatabase:
         if r is not None:
             data = r[0]
         else:
-            print("Error in get file data",m_id)
+            print("Error in get file data",f_id)
         return data
 
     def replace_file(self, f_id, data):
@@ -104,15 +108,14 @@ class FilesDatabase:
             return None
         return self.get_owner_of_collection(collection_id)
 
-    def get_data_type_list(self, is_model=None, is_skeleton_motion=None, is_time_series=None):
+    def get_data_type_list(self, tags=None):
         filter_conditions = []
-        if is_model is not None:
-            filter_conditions+=[("isModel", is_model)]
-        if is_skeleton_motion is not None:
-            filter_conditions+=[("isSkeletonMotion", is_skeleton_motion)]
-        if is_time_series is not None:
-            filter_conditions+=[("isTimeSeries", is_time_series)]
-        return self.tables[self.data_types_table].get_record_list(["name"], filter_conditions=filter_conditions)
+        join_statement = None
+        if tags is not None:
+            join_statement = " LEFT JOIN "+self.data_type_taggings_table+" ON  "+self.data_types_table+".dataType = "+self.data_type_taggings_table+".dataType"
+            for tag in tags:
+                filter_conditions += [(self.data_type_taggings_table+".tag", tag) ]
+        return self.tables[self.data_types_table].get_record_list(["name"], filter_conditions=filter_conditions, join_statement=join_statement, distinct=True)
 
     def create_data_type(self, data):
         name = data["name"]
@@ -181,52 +184,33 @@ class FilesDatabase:
         condition_list = [("dataType", mt), ("engine", engine)]
         return self.tables[self.data_loader_table].delete_record_by_condition(condition_list)
 
-
-    def get_data_transform_list(self):
-        return self.tables[self.data_transforms_table].get_record_list(["ID","name","outputType", "outputIsCollection"])
+    def get_tag_list(self):
+        return self.tables[self.tags_table].get_record_list(["name"])
     
-    def create_data_transform(self, data):
-        return self.tables[self.data_transforms_table].create_record(data)
-
-    def edit_data_transform(self, dt_id, data):
-        self.tables[self.data_transforms_table].update_record(dt_id, data)
+    def create_tag(self, tag):
+        data = dict()
+        data["name"] = tag
+        return self.tables[self.tags_table].create_record(data)
     
-    def get_data_transform_info(self, dt_id):
-        cols = self.tables[self.data_transforms_table].cols
-        record = self.tables[self.data_transforms_table].get_record_by_id(dt_id)
-        if record is None:
-            return None
-        info = dict()
-        for i, k in enumerate(cols):
-            info[k] = record[i]
-        return info
+    def remove_tag(self, tag):
+        self.tables[self.tags_table].delete_record_by_name(tag)
+        condition = [("tag",tag)]
+        return self.tables[self.data_type_taggings_table].delete_record_by_condition(condition)
     
-    def remove_data_transform(self, dt_id):
-        return self.tables[self.data_transforms_table].delete_record_by_id(dt_id)
-
-    def get_data_transform_input_list(self, dt_id):
-        filter_conditions = []
-        if dt_id is not None:
-            filter_conditions+=[("dataTransform", dt_id)]
-        return self.tables[self.data_transform_inputs_table].get_record_list(["ID", "dataType", "isCollection"], filter_conditions=filter_conditions)
+    def get_data_type_tag_list(self, data_type):
+        filter_conditions=[("dataType", data_type)]
+        return self.tables[self.data_type_taggings_table].get_record_list(["tag"], filter_conditions=filter_conditions)
 
     
-    def create_data_transform_input(self, data):
-        return self.tables[self.data_transform_inputs_table].create_record(data)
+    def add_tag_type_tag(self, data_type, tag):
+        data = dict()
+        data["tag"] = tag
+        data["dataType"] = data_type
+        return self.tables[self.data_type_taggings_table].create_record(data)
 
-    def edit_data_transform_input(self, dti_id, data):
-        self.tables[self.data_transform_inputs_table].update_record(dti_id, data)
-    
-    def get_data_transform_input_info(self, dti_id):
-        cols = self.tables[self.data_transform_inputs_table].cols
-        record = self.tables[self.data_transform_inputs_table].get_record(dti_id)
-        if record is None:
-            return None
-        info = dict()
-        for i, k in enumerate(cols):
-            info[k] = record[i]
-        return info
-    
-    def remove_data_transform_input(self, dti_id):
-        return self.tables[self.data_transform_inputs_table].delete_record_by_id(dti_id)
+    def remove_data_type_tag(self, data_type, tag=None):
+        condition = [("dataType",data_type)]
+        if tag is not None:
+            condition += [("tag",tag)]
+        return self.tables[self.data_type_taggings_table].delete_record_by_condition(condition)
     

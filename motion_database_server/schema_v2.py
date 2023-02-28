@@ -73,6 +73,12 @@ TABLES["experiment_inputs"] = [
             ("dataTransformInput",INT_T),
             ("experiment",INT_T),
             ("input",INT_T)]
+
+TABLES["tags"] =  [("name",TEXT_T), # need to be unique
+                ]
+
+TABLES["data_type_taggings"] =  [("tag",TEXT_T), # need to be unique
+                                 ("dataType",TEXT_T)]
 # download the inputs to folder
     #for each input if collection -> recursion
     #                else download file
@@ -89,3 +95,8 @@ TABLES["model_graphs"] = [("name",TEXT_T),
                     ("project",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",TEXT_T)]
+TABLES["tags"] = [
+            ("name",INT_T)]
+TABLES["data_type_taggings"] = [
+            ("dataType",TEXT_T),
+            ("tag",INT_T)]

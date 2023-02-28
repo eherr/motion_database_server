@@ -1,20 +1,21 @@
 
 import json
+import base64
 import tornado.web
 from motion_database_server.base_handler import BaseDBHandler
 
 class FileDBHandler(BaseDBHandler):
     def has_access(self, data):
         f_id = data.get("file_id", None)
-        if m_id is None:
+        if f_id is None:
             return False
         token = data.get("token", None)
         if token is None:
             return False
         owner_id = self.motion_database.get_owner_of_file(f_id)
-        request_user_id = self.motion_database.get_user_id_from_token(token)
-        role = self.app.motion_database.get_user_role(request_user_id)
-        return request_user_id == owner_id or role == USER_ROLE_ADMIN
+        request_user_id = self.project_database.get_user_id_from_token(token)
+        role = self.project_database.get_user_role(request_user_id)
+        return request_user_id == owner_id or role == "admin"
 
 class GetFileList(FileDBHandler):
     @tornado.gen.coroutine
@@ -25,10 +26,8 @@ class GetFileList(FileDBHandler):
             collection = input_data.get("collection", None)
             data_type = input_data.get("data_type", None)
             skeleton = input_data.get("skeleton", None)
-            files = []
-            if collection is not None:
-                files = self.motion_database.get_file_list_by_collection(collection, skeleton, data_type)
-                print(files)
+            tags = input_data.get("tags", None)
+            files = self.motion_database.get_file_list(collection, skeleton, data_type, tags=tags)
             files_str = json.dumps(files)
             self.write(files_str)
         except Exception as e:
@@ -46,9 +45,9 @@ class AddFileHandler(FileDBHandler):
             input_data = json.loads(input_str)
             response_dict = dict()
             success = False
-            if "collection" in input_data and "data" in input_data and self.motion_database.check_rights(input_data):
+            if "collection" in input_data and "data" in input_data and self.project_database.check_rights(input_data):
                 input_data["data"] = base64.b64decode(input_data["data"])
-                new_id = self.motion_database.upload_file(input_data)
+                new_id = self.motion_database.create_file(input_data)
                 response_dict["id"] = new_id
                 success = True
             else:
@@ -149,7 +148,10 @@ class ReplaceFileHandler(FileDBHandler):
 class GetDataTypeList(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
-        exp_list = self.app.motion_database.get_data_type_list()
+        input_str = self.request.body.decode("utf-8")
+        input_data = json.loads(input_str)
+        tags = input_data.get("tags", None)
+        exp_list = self.app.motion_database.get_data_type_list(tags)
         response = json.dumps(exp_list)
         self.write(response)
 
@@ -167,8 +169,8 @@ class AddDataTypeHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            
            response_dict = dict()
            response_dict["success"] = False
@@ -195,8 +197,8 @@ class EditDataTypeHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            data_type = input_data["data_type"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.edit_data_type(data_type, input_data)
@@ -220,8 +222,8 @@ class RemoveDataTypeHandler(BaseDBHandler):
            input_data = json.loads(input_str)
            data_type = input_data["data_type"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.remove_data_type(data_type)
@@ -301,8 +303,8 @@ class AddDataLoaderHandler(BaseDBHandler):
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            
            response_dict = dict()
            response_dict["success"] = False
@@ -329,8 +331,8 @@ class EditDataLoaderHandler(BaseDBHandler):
            data_type = input_data["data_type"]
            engine = input_data["engine"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.edit_data_loader(data_type, engine, input_data)
@@ -356,8 +358,8 @@ class RemoveDataLoaderHandler(BaseDBHandler):
            data_type = input_data["data_type"]
            engine = input_data["engine"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
                 self.app.motion_database.remove_data_loader(data_type, engine)
@@ -406,36 +408,39 @@ FILE_DB_HANDLER_LIST += [
                             (r"/data_loaders/info", GetDataLoaderInfoHandler)
                             ]
 
-class GetDataTransformList(BaseDBHandler):
+
+
+class GetTagList(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
-        data_loader_list = self.app.motion_database.get_data_transform_list()
-        response = json.dumps(data_loader_list)
+        tag_list = self.app.motion_database.get_tag_list()
+        response = json.dumps(tag_list)
         self.write(response)
 
     @tornado.gen.coroutine
     def get(self):
-        data_loader_list = self.app.motion_database.get_data_transform_list()
-        response = json.dumps(data_loader_list)
+        tag_list = self.app.motion_database.get_tag_list()
+        response = json.dumps(tag_list)
         self.write(response)
 
 
 
 
-class AddDataTransformHandler(BaseDBHandler):
+class AddTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
-               new_id = self.app.motion_database.create_data_transform(input_data)
+               tag = input_data["tag"]
+               new_id = self.app.motion_database.create_tag(tag)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)
@@ -447,49 +452,22 @@ class AddDataTransformHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class EditDataTransformHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           print(input_str)
-           input_data = json.loads(input_str)
-           dt_id = input_data["data_transform_id"]
-           token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
-           success = False
-           if role == "admin":
-                self.app.motion_database.edit_data_transform(dt_id, input_data)
-                success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-     
-
-class RemoveDataTransformHandler(BaseDBHandler):
+class RemoveTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
            print("delete",input_str)
            input_data = json.loads(input_str)
-           dt_id = input_data["data_transform_id"]
+           tag = input_data["tag"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
            print("delete",input_data)
            if role == "admin":
                 print("delete",input_data)
-                self.app.motion_database.remove_data_transform(dt_id)
+                self.app.motion_database.remove_tag(tag)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -502,69 +480,43 @@ class RemoveDataTransformHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class GetDataTransformInfoHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            print(input_str)
-            input_data = json.loads(input_str)
-            dt_id = input_data["data_transform_id"]
-            info = self.app.motion_database.get_data_transform_info(dt_id)
-            response_dict = dict()
-            success = False
-            if info is not None:
-                response_dict.update(info)
-                success = True
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
 
 FILE_DB_HANDLER_LIST += [
-                            (r"/data_transforms", GetDataTransformList),
-                            (r"/data_transforms/add", AddDataTransformHandler),
-                            (r"/data_transforms/edit", EditDataTransformHandler),
-                            (r"/data_transforms/remove", RemoveDataTransformHandler),
-                            (r"/data_transforms/info", GetDataTransformInfoHandler)
+                            (r"/tags", GetTagList),
+                            (r"/tags/add", AddTagHandler),
+                            (r"/tags/remove", RemoveTagHandler),
                             ]
-class GetDataTransformInputList(BaseDBHandler):
+
+class GetDataTypeTagList(BaseDBHandler):
     @tornado.gen.coroutine
-    def post(self): 
-        try:
-            input_str = self.request.body.decode("utf-8")
-            input_data = json.loads(input_str)
-            dt_id = input_data["data_transform_id"]
-            data_loader_list = self.app.motion_database.get_data_transform_input_list(dt_id)
-            response = json.dumps(data_loader_list)
-            self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
+    def post(self):
+        input_str = self.request.body.decode("utf-8")
+        input_data = json.loads(input_str)
+        data_type = input_data["data_type"]
+        tag_list = self.app.motion_database.get_data_type_tag_list(data_type)
+        response = json.dumps(tag_list)
+        self.write(response)
 
 
-class AddDataTransformInputHandler(BaseDBHandler):
+
+
+class AddDataTypeTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
            input_data = json.loads(input_str)
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
-               new_id = self.app.motion_database.create_data_transform_input(input_data)
+               tag = input_data["tag"]
+               data_type = input_data["data_type"]
+               print("add", input_data)
+               new_id = self.app.motion_database.add_tag_type_tag(data_type, tag)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)
@@ -576,46 +528,23 @@ class AddDataTransformInputHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class EditDataTransformInputHandler(BaseDBHandler):
+class RemoveDataTypeTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
-           print(input_str)
+           print("delete",input_str)
            input_data = json.loads(input_str)
-           dti_id = input_data["data_transform_input_id"]
+           tag = input_data["tag"]
+           data_type = input_data["data_type"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
+           print("delete",input_data)
            if role == "admin":
-                self.app.motion_database.edit_data_transform_input(dti_id, input_data)
-                success = True
-           response_dict = dict()
-           response_dict["success"] = success
-           response = json.dumps(response_dict)
-           self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-     
-
-class RemoveDataTransformInputHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-           input_str = self.request.body.decode("utf-8")
-           input_data = json.loads(input_str)
-           dti_id = input_data["data_transform_input_id"]
-           token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
-           success = False
-           if role == "admin":
-                self.app.motion_database.remove_data_transform_input(dti_id)
+                print("delete",input_data)
+                self.app.motion_database.remove_data_type_tag(data_type, tag)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -628,21 +557,23 @@ class RemoveDataTransformInputHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class RemoveAllDataTransformInputHandler(BaseDBHandler):
+
+class RemoveAllDataTypeTagsHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
            input_str = self.request.body.decode("utf-8")
+           print("delete",input_str)
            input_data = json.loads(input_str)
-           dt_id = input_data["data_transform_id"]
+           data_type = input_data["data_type"]
            token = input_data["token"]
-           request_user_id = self.app.motion_database.get_user_id_from_token(token) 
-           role = self.app.motion_database.get_user_role(request_user_id)
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
            success = False
+           print("delete",input_data)
            if role == "admin":
-                input_list = self.app.motion_database.get_data_transform_input_list(dt_id)
-                for di in input_list:
-                    self.app.motion_database.remove_data_transform_input(di[0])
+                print("delete",input_data)
+                self.app.motion_database.remove_data_type_tag(data_type)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -654,37 +585,9 @@ class RemoveAllDataTransformInputHandler(BaseDBHandler):
             raise
         finally:
             self.finish()
-
-class GetDataTransformInputInfoHandler(BaseDBHandler):
-    @tornado.gen.coroutine
-    def post(self):
-        try:
-            input_str = self.request.body.decode("utf-8")
-            print(input_str)
-            input_data = json.loads(input_str)
-            dti_id = input_data["data_transform_input_id"]
-            info = self.app.motion_database.get_data_transform_input_info(dti_id)
-            response_dict = dict()
-            success = False
-            if info is not None:
-                response_dict.update(info)
-                success = True
-            response_dict["success"] = success
-            response = json.dumps(response_dict)
-            self.write(response)
-        except Exception as e:
-            print("caught exception in get")
-            self.write("Caught an exception: %s" % e)
-            raise
-        finally:
-            self.finish()
-
-
 FILE_DB_HANDLER_LIST += [
-                            (r"/data_transforms/inputs", GetDataTransformInputList),
-                            (r"/data_transforms/inputs/add", AddDataTransformInputHandler),
-                            (r"/data_transforms/inputs/edit", EditDataTransformInputHandler),
-                            (r"/data_transforms/inputs/remove", RemoveDataTransformInputHandler),
-                            (r"/data_transforms/inputs/removeall", RemoveAllDataTransformInputHandler),
-                            (r"/data_transforms/inputs/info", GetDataTransformInputInfoHandler)
+                            (r"/data_types/tags", GetDataTypeTagList),
+                            (r"/data_types/tags/add", AddDataTypeTagHandler),
+                            (r"/data_types/tags/remove", RemoveDataTypeTagHandler),
+                            (r"/data_types/tags/removeall", RemoveAllDataTypeTagsHandler),
                             ]
