@@ -121,13 +121,13 @@ DATA_TRANSFORM_HANDLER_LIST = [(r"/data_transforms/run", RunDataTransformHandler
 class GetDataTransformList(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
-        data_loader_list = self.app.motion_database.get_data_transform_list()
+        data_loader_list = self.data_transform_service.get_data_transform_list()
         response = json.dumps(data_loader_list)
         self.write(response)
 
     @tornado.gen.coroutine
     def get(self):
-        data_loader_list = self.app.motion_database.get_data_transform_list()
+        data_loader_list = self.data_transform_service.get_data_transform_list()
         response = json.dumps(data_loader_list)
         self.write(response)
 
@@ -147,7 +147,7 @@ class AddDataTransformHandler(BaseDBHandler):
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
-               new_id = self.app.motion_database.create_data_transform(input_data)
+               new_id = self.data_transform_service.create_data_transform(input_data)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)
@@ -172,7 +172,7 @@ class EditDataTransformHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                self.app.motion_database.edit_data_transform(dt_id, input_data)
+                self.data_transform_service.edit_data_transform(dt_id, input_data)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -201,7 +201,7 @@ class RemoveDataTransformHandler(BaseDBHandler):
            print("delete",input_data)
            if role == "admin":
                 print("delete",input_data)
-                self.app.motion_database.remove_data_transform(dt_id)
+                self.data_transform_service.remove_data_transform(dt_id)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -222,7 +222,7 @@ class GetDataTransformInfoHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             dt_id = input_data["data_transform_id"]
-            info = self.app.motion_database.get_data_transform_info(dt_id)
+            info = self.data_transform_service.get_data_transform_info(dt_id)
             response_dict = dict()
             success = False
             if info is not None:
@@ -252,7 +252,7 @@ class GetDataTransformInputList(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             dt_id = input_data["data_transform_id"]
-            data_loader_list = self.app.motion_database.get_data_transform_input_list(dt_id)
+            data_loader_list = self.data_transform_service.get_data_transform_input_list(dt_id)
             response = json.dumps(data_loader_list)
             self.write(response)
         except Exception as e:
@@ -276,7 +276,7 @@ class AddDataTransformInputHandler(BaseDBHandler):
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
-               new_id = self.app.motion_database.create_data_transform_input(input_data)
+               new_id = self.data_transform_service.create_data_transform_input(input_data)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)
@@ -301,7 +301,7 @@ class EditDataTransformInputHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                self.app.motion_database.edit_data_transform_input(dti_id, input_data)
+                self.data_transform_service.edit_data_transform_input(dti_id, input_data)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -327,7 +327,7 @@ class RemoveDataTransformInputHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                self.app.motion_database.remove_data_transform_input(dti_id)
+                self.data_transform_service.remove_data_transform_input(dti_id)
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -352,9 +352,9 @@ class RemoveAllDataTransformInputHandler(BaseDBHandler):
            role = self.project_database.get_user_role(request_user_id)
            success = False
            if role == "admin":
-                input_list = self.app.motion_database.get_data_transform_input_list(dt_id)
+                input_list = self.data_transform_service.get_data_transform_input_list(dt_id)
                 for di in input_list:
-                    self.app.motion_database.remove_data_transform_input(di[0])
+                    self.data_transform_service.remove_data_transform_input(di[0])
                 success = True
            response_dict = dict()
            response_dict["success"] = success
@@ -375,7 +375,7 @@ class GetDataTransformInputInfoHandler(BaseDBHandler):
             print(input_str)
             input_data = json.loads(input_str)
             dti_id = input_data["data_transform_input_id"]
-            info = self.app.motion_database.get_data_transform_input_info(dti_id)
+            info = self.data_transform_service.get_data_transform_input_info(dti_id)
             response_dict = dict()
             success = False
             if info is not None:

@@ -21,23 +21,32 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from motion_database_server.project_database import ProjectDatabase
-from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
-from motion_database_server.project_database_handlers import PROJECT_DB_HANDLER_LIST
+from motion_database_server.data_transform_database import DataTransformDatabase
+from motion_database_server.experiment_database import ExperimentDatabase
+from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HANDLER_LIST
+from motion_database_server.data_transform_handlers import DATA_TRANSFORM_HANDLER_LIST
 from motion_database_server.service_base import ServiceBase
+from motion_database_server.database_wrapper import DatabaseWrapper
 from motion_database_server.schema_v2 import DBSchema, TABLES
+from motion_database_server.table import Table
 
 
-class ProjectDatabaseService(ServiceBase):
-    """ Wrapper for the Project Service class that can be registered as a service
+
+class DataTransformDatabaseService(ServiceBase, DatabaseWrapper, DataTransformDatabase, ExperimentDatabase):
+    """ Wrapper for the DataTransformDatabase class that can be registered as a service
     """
-    service_name = "PROJECT_DB"
+    service_name = "DATA_TRANSFORM_DB"
     def __init__(self, **kwargs):
         self.db_path = kwargs.get("db_path", r"./motion.db")
-        server_secret = kwargs.get("server_secret", None)
-        self.activate_user_authentification = kwargs.get("activate_user_authentification", True)
-        schema = DBSchema(TABLES)
-        self.project_database = ProjectDatabase(schema, server_secret=server_secret)
-        self.project_database.connect(self.db_path)
-        self.request_handler_list = USER_DB_HANDLER_LIST + PROJECT_DB_HANDLER_LIST
-
+        self.data_dir = kwargs.get("data_dir","data")
+        self.port = kwargs.get("port", 8888)
+        self.schema = DBSchema(TABLES)
+        self.tables = dict()
+        for name in self.schema.tables:
+            self.tables[name] = Table(self, name, self.schema.tables[name])
+        DataTransformDatabase.__init__(self)
+        ExperimentDatabase.__init__(self)
+        self.connect_to_database(self.db_path)
+        self.request_handler_list = []
+        self.request_handler_list += DATA_TRANSFORM_HANDLER_LIST
+        self.request_handler_list += EXPERIMENT_DB_HANDLER_LIST

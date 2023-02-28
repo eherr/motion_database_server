@@ -22,9 +22,6 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import json
-import tornado.websocket
-import tornado.ioloop
-import tornado.web
 import requests
 from motion_database_server.motion_file_database import MotionFileDatabase
 from motion_database_server.kubernetes_interface import load_kube_config
@@ -32,12 +29,10 @@ from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLE
 from motion_database_server.model_graph_database_handlers import MODEL_GRAPH_HANDLER_LIST
 from motion_database_server.mg_model_handlers import MG_MODEL_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
-from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HANDLER_LIST
 from motion_database_server.files_database_handlers import FILE_DB_HANDLER_LIST
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.model_database_handlers import MODEL_DB_HANDLER_LIST
 from motion_database_server.collection_database_handlers import COLLECTION_DB_HANDLER_LIST
-from motion_database_server.data_transform_handlers import DATA_TRANSFORM_HANDLER_LIST
 from motion_database_server.service_base import ServiceBase
 
 
@@ -62,8 +57,7 @@ class MotionDatabaseService(ServiceBase):
         self.request_handler_list += COLLECTION_DB_HANDLER_LIST
         self.request_handler_list += FILE_DB_HANDLER_LIST
         self.request_handler_list += MODEL_GRAPH_HANDLER_LIST
-        self.request_handler_list += EXPERIMENT_DB_HANDLER_LIST
-        self.request_handler_list += DATA_TRANSFORM_HANDLER_LIST
+
         # legacy
         self.request_handler_list += CHARACTER_HANDLER_LIST
         self.request_handler_list += MG_MODEL_HANDLER_LIST

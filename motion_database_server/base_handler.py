@@ -22,6 +22,7 @@
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import mimetypes
 import tornado.web
+import json
 
 
 mimetypes.add_type("application/html", ".html")
@@ -62,4 +63,23 @@ class BaseDBHandler(BaseHandler):
         self.motion_database = self.app.motion_database
         self.project_service = application.get_service_context("PROJECT_DB")
         self.project_database = self.project_service.project_database
+        self.data_transform_service = application.get_service_context("DATA_TRANSFORM_DB")
 
+class JSONHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_dict = json.loads(input_str)
+           response_dict = self.method(self, input_dict)
+           response = json.dumps(response_dict)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in post")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+    def handle_json_request(self, input_data):
+        pass

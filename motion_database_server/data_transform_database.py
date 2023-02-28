@@ -1,6 +1,6 @@
 
 
-class DataTansformDatabase:
+class DataTransformDatabase:
     data_transforms_table = "data_transforms"
     data_transform_inputs_table = "data_transform_inputs"
     

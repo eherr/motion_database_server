@@ -23,6 +23,7 @@
 from motion_database_server.web_app_server import WebAppServer
 from motion_database_server.project_database_service import ProjectDatabaseService
 from motion_database_server.motion_database_service import MotionDatabaseService
+from motion_database_server.data_transform_database_service import DataTransformDatabaseService
 from motion_database_server.utils import load_json_file
 
 
@@ -30,6 +31,7 @@ def main(config):
     server = WebAppServer(**config)
     server.register_service(ProjectDatabaseService.service_name, ProjectDatabaseService(**config))
     server.register_service(MotionDatabaseService.service_name, MotionDatabaseService(**config))
+    server.register_service(DataTransformDatabaseService.service_name, DataTransformDatabaseService(**config))
     server.start()
 
 
@@ -37,3 +39,4 @@ CONFIG_FILE = "db_server_config.json"
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
     main(config)
+

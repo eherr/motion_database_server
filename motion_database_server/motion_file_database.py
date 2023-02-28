@@ -25,7 +25,6 @@ import bson
 import bz2
 import base64
 from motion_database_server.utils import get_bvh_from_str, extract_compressed_bson
-from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.database_wrapper import DatabaseWrapper
 from motion_database_server.files_database import FilesDatabase
 from motion_database_server.collection_database import CollectionDatabase
@@ -33,8 +32,6 @@ from motion_database_server.skeleton_database import SkeletonDatabase
 from motion_database_server.model_graph_database import ModelGraphDatabase
 from motion_database_server.mg_model_database import MGModelDatabase
 from anim_utils.animation_data.skeleton_builder import SkeletonBuilder
-from motion_database_server.experiment_database import ExperimentDatabase
-from motion_database_server.data_transform_database import DataTansformDatabase
 from anim_utils.animation_data.motion_vector import MotionVector
 from motion_database_server.character_storage import CharacterStorage
 from motion_database_server.file_storage import FileStorage
@@ -54,7 +51,7 @@ def load_motion_vector_from_bvh_str(bvh_str):
     motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
     return motion_vector
 
-class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, FilesDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage,  ExperimentDatabase, DataTansformDatabase):
+class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, FilesDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage):
     
     def __init__(self, schema=None, data_dir="data",port=8888):
         if schema is None:
