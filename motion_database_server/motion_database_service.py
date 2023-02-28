@@ -28,25 +28,19 @@ import tornado.web
 import requests
 from motion_database_server.motion_file_database import MotionFileDatabase
 from motion_database_server.kubernetes_interface import load_kube_config
-from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.skeleton_database_handlers import SKELETON_DB_HANDLER_LIST
 from motion_database_server.model_graph_database_handlers import MODEL_GRAPH_HANDLER_LIST
 from motion_database_server.mg_model_handlers import MG_MODEL_HANDLER_LIST
 from motion_database_server.character_storage_handlers import CHARACTER_HANDLER_LIST
-from motion_database_server.job_server_handlers import JOB_SERVER_HANDLER_LIST
-from motion_database_server.project_database_handlers import PROJECT_DB_HANDLER_LIST
 from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HANDLER_LIST
 from motion_database_server.files_database_handlers import FILE_DB_HANDLER_LIST
 from motion_database_server.motion_database_handlers import MOTION_DB_HANDLER_LIST
 from motion_database_server.model_database_handlers import MODEL_DB_HANDLER_LIST
 from motion_database_server.collection_database_handlers import COLLECTION_DB_HANDLER_LIST
 from motion_database_server.data_transform_handlers import DATA_TRANSFORM_HANDLER_LIST
+from motion_database_server.service_base import ServiceBase
 
 
-class ServiceBase:
-    service_name = str
-    request_handler_list : list
-    route : str
 
 class MotionDatabaseService(ServiceBase):
     """ Wrapper for the MotionDatabase class that can be registered as a service
@@ -67,12 +61,10 @@ class MotionDatabaseService(ServiceBase):
         self.motion_database.connect_to_database(self.db_path)
         self.motion_database.load_skeletons()
         self.request_handler_list = []
-        #self.request_handler_list += USER_DB_HANDLER_LIST
         self.request_handler_list += SKELETON_DB_HANDLER_LIST
         self.request_handler_list += COLLECTION_DB_HANDLER_LIST
         self.request_handler_list += FILE_DB_HANDLER_LIST
         self.request_handler_list += MODEL_GRAPH_HANDLER_LIST
-        #self.request_handler_list += PROJECT_DB_HANDLER_LIST
         self.request_handler_list += EXPERIMENT_DB_HANDLER_LIST
         self.request_handler_list += DATA_TRANSFORM_HANDLER_LIST
         # legacy
