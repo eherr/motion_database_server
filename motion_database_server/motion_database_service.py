@@ -48,16 +48,13 @@ class MotionDatabaseService(ServiceBase):
     service_name = "MOTION_DB"
     def __init__(self, **kwargs):
         self.db_path = kwargs.get("db_path", r"./motion.db")
-        self.server_secret = kwargs.get("server_secret", None)
-        self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
-        self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
         kube_config = kwargs.get("kube_config", None)
         if kube_config is not None:
             load_kube_config(kube_config["config_file"])
             self.k8s_namespace = kube_config["namespace"]
         else:
             self.k8s_namespace = ""
-        self.motion_database = MotionFileDatabase(data_dir="data",port=888)
+        self.motion_database = MotionFileDatabase(data_dir="data",port=8888)
         self.motion_database.connect_to_database(self.db_path)
         self.motion_database.load_skeletons()
         self.request_handler_list = []
