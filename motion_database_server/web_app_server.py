@@ -85,7 +85,8 @@ class WebAppServer(tornado.web.Application):
     def get_service_context(self, service_name):
         return self.service_contexts[service_name]
 
-    def register_service(self, service_name, service_context):
+    def register_service(self, service_context):
+        service_name = service_context.service_name
         self.service_contexts[service_name] = service_context
         self.request_handler_list += service_context.request_handler_list
 

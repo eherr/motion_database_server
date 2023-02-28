@@ -29,9 +29,9 @@ from motion_database_server.utils import load_json_file
 
 def main(config):
     server = WebAppServer(**config)
-    server.register_service(ProjectDatabaseService.service_name, ProjectDatabaseService(**config))
-    server.register_service(MotionDatabaseService.service_name, MotionDatabaseService(**config))
-    server.register_service(DataTransformDatabaseService.service_name, DataTransformDatabaseService(**config))
+    server.register_service(ProjectDatabaseService(**config))
+    server.register_service(MotionDatabaseService(**config))
+    server.register_service(DataTransformDatabaseService(**config))
     server.start()
 
 
