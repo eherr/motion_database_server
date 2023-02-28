@@ -82,7 +82,7 @@ class GetCollectionListHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_user_access_rights(input_data)
+            owner, public = self.project_database.get_user_access_rights(input_data)
             col_str = "[]"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
@@ -103,7 +103,7 @@ class GetCollectionTreeHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            owner, public = self.motion_database.get_user_access_rights(input_data)
+            owner, public = self.project_database.get_user_access_rights(input_data)
             cols_str = "{}"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
