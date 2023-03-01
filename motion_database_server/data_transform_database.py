@@ -52,3 +52,13 @@ class DataTransformDatabase:
     def remove_data_transform_input(self, dti_id):
         return self.tables[self.data_transform_inputs_table].delete_record_by_id(dti_id)
     
+    def rename_data_type(self, old_name, new_name):
+        conditions = [("outputType", old_name)]
+        input_data = dict()
+        input_data["outputType"] = new_name
+        self.tables[self.data_transforms_table].update_record_by_condition(conditions, input_data)
+        
+        conditions = [("dataType", old_name)]
+        input_data = dict()
+        input_data["dataType"] = new_name
+        self.tables[self.data_transform_inputs_table].update_record_by_condition(conditions, input_data)

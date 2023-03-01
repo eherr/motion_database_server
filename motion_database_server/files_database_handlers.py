@@ -202,6 +202,9 @@ class EditDataTypeHandler(BaseDBHandler):
            success = False
            if role == "admin":
                 self.app.motion_database.edit_data_type(data_type, input_data)
+                if "name" in input_data:
+                    self.data_transform_service.rename_data_type(data_type, input_data["name"])
+                
                 success = True
            response_dict = dict()
            response_dict["success"] = success

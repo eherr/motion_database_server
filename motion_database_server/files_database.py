@@ -142,18 +142,15 @@ class FilesDatabase:
         # rename in other tables
         input_data = dict()
         input_data["dataType"] = data["name"]
-        self.tables[self.data_loader_table].update_record_by_condition(conditions, input_data)
-        
-        conditions = [("outputType", dt)]
-        input_data = dict()
-        input_data["outputType"] = data["name"]
-        self.tables[self.data_transforms_table].update_record_by_condition(conditions, input_data)
-        
-        conditions = [("dataType", dt)]
+        self.tables[self.files_table].update_record_by_condition(conditions, input_data)
+
         input_data = dict()
         input_data["dataType"] = data["name"]
-        self.tables[self.data_transform_inputs_table].update_record_by_condition(conditions, input_data)
-
+        self.tables[self.data_loader_table].update_record_by_condition(conditions, input_data)
+        
+        input_data = dict()
+        input_data["dataType"] = data["name"]
+        self.tables[self.data_type_taggings_table].update_record_by_condition(conditions, input_data)
         
 
     def get_data_type_info(self, dt):
