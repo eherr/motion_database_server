@@ -427,8 +427,6 @@ class GetTagList(BaseDBHandler):
         self.write(response)
 
 
-
-
 class AddTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
@@ -454,6 +452,33 @@ class AddTagHandler(BaseDBHandler):
             raise
         finally:
             self.finish()
+
+
+class RenameTagHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+           input_str = self.request.body.decode("utf-8")
+           input_data = json.loads(input_str)
+           token = input_data["token"]
+           request_user_id = self.project_database.get_user_id_from_token(token) 
+           role = self.project_database.get_user_role(request_user_id)
+           response_dict = dict()
+           response_dict["success"] = False
+           if role == "admin":
+               old_tag = input_data["old_tag"]
+               new_tag = input_data["new_tag"]
+               self.app.motion_database.rename_tag(old_tag, new_tag)
+               response_dict["success"] = True
+           response = json.dumps(response_dict)
+           self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
 
 class RemoveTagHandler(BaseDBHandler):
     @tornado.gen.coroutine
@@ -487,6 +512,7 @@ class RemoveTagHandler(BaseDBHandler):
 FILE_DB_HANDLER_LIST += [
                             (r"/tags", GetTagList),
                             (r"/tags/add", AddTagHandler),
+                            (r"/tags/rename", RenameTagHandler),
                             (r"/tags/remove", RemoveTagHandler),
                             ]
 

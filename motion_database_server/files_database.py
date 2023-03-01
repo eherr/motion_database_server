@@ -189,6 +189,16 @@ class FilesDatabase:
         data["name"] = tag
         return self.tables[self.tags_table].create_record(data)
     
+    def rename_tag(self, old_tag, new_tag):
+        data = dict()
+        data["name"] = new_tag
+        self.tables[self.tags_table].update_record_by_name(old_tag, data)
+        data = dict()
+        data["tag"] = new_tag
+        conditions = [("tag", old_tag)]
+        self.tables[self.data_type_taggings_table].update_record_by_condition(conditions, data)
+        
+    
     def remove_tag(self, tag):
         self.tables[self.tags_table].delete_record_by_name(tag)
         condition = [("tag",tag)]
