@@ -21,6 +21,7 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+import os
 from motion_database_server.data_transform_database import DataTransformDatabase
 from motion_database_server.experiment_database import ExperimentDatabase
 from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HANDLER_LIST
@@ -29,7 +30,7 @@ from motion_database_server.service_base import ServiceBase
 from motion_database_server.database_wrapper import DatabaseWrapper
 from motion_database_server.schema_v2 import DBSchema, TABLES
 from motion_database_server.table import Table
-
+from motion_database_server.utils import load_json_file
 
 
 class DataTransformDatabaseService(ServiceBase, DatabaseWrapper, DataTransformDatabase, ExperimentDatabase):
@@ -40,6 +41,10 @@ class DataTransformDatabaseService(ServiceBase, DatabaseWrapper, DataTransformDa
         self.db_path = kwargs.get("db_path", r"./motion.db")
         self.data_dir = kwargs.get("data_dir","data")
         self.port = kwargs.get("port", 8888)
+        session_file = kwargs.get("session_file", "session.json")
+        self.session = dict()
+        if os.path.isfile(session_file):
+            self.session = load_json_file(session_file)
         self.schema = DBSchema(TABLES)
         self.tables = dict()
         for name in self.schema.tables:
