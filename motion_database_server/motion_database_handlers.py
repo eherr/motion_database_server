@@ -294,7 +294,7 @@ class DeleteMotionHandler(BaseDBHandler):
             if "clip_id" in input_data and "token" in input_data:
                 m_id = input_data["clip_id"]
                 token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_motion(m_id)
+                owner_id = self.motion_database.get_owner_of_file(m_id)
                 request_user_id = self.project_database.get_user_id_from_token(token)
                 role = self.project_database.get_user_role(request_user_id)
                 if request_user_id != owner_id and role != USER_ROLE_ADMIN:

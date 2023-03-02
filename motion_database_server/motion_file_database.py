@@ -160,7 +160,6 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
             filter_conditions+=[("skeleton", skeleton)]
         if processed is not None:
             filter_conditions+=[("processed", processed)]
-        r = self.query_table(self.motion_table, ["ID","name"], filter_conditions)
         return self.tables[self.files_table].search_records_by_name(name, ["ID","name"], exact_match, filter_conditions)
 
    

@@ -74,10 +74,10 @@ class RemoveFileHandler(FileDBHandler):
             response_dict = dict()
             if self.has_access(input_data):
                 m_id = input_data["file_id"]
-                print("Error: has no access rights")
                 self.motion_database.delete_file_by_id(m_id)
                 success = True
-
+            else:
+                print("Error: has no access rights")
             response_dict["success"] = success
             response = json.dumps(response_dict)
             self.write(response)
