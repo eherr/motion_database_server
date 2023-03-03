@@ -41,6 +41,9 @@ class DataTransformDatabaseService(ServiceBase, DatabaseWrapper, DataTransformDa
         self.db_path = kwargs.get("db_path", r"./motion.db")
         self.data_dir = kwargs.get("data_dir","data")
         self.port = kwargs.get("port", 8888)
+        self.cluster_url = kwargs.get("cluster_url", None)
+        self.cluster_image  = kwargs.get("cluster_image", None)
+        self.db_url = kwargs.get("db_url", "localhost")        
         session_file = kwargs.get("session_file", "session.json")
         self.session = dict()
         if os.path.isfile(session_file):
