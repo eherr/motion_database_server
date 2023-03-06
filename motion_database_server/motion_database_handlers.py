@@ -51,7 +51,7 @@ class GetMotionHandler(BaseDBHandler):
         print("get motion",input_str)
         start = time.time()
         input_data = json.loads(input_str)
-        data, meta_data, skeleton_type = self.motion_database.get_motion_by_id(input_data["clip_id"])
+        data = self.motion_database.get_motion_from_file(input_data["clip_id"])
         
         self.write(data)
 

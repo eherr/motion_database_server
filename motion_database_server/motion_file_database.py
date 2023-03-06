@@ -41,6 +41,7 @@ from motion_database_server.table import Table
 from motion_db_interface import DataTransformRegistry
 from motion_database_server.utils import load_json_file
 from motion_db_interface.model_db_session import ModelDBSession
+from motion_db_interface.model_registry import ModelRegistry
 
 
 def load_motion_vector_from_bvh_str(bvh_str):
@@ -50,6 +51,7 @@ def load_motion_vector_from_bvh_str(bvh_str):
     motion_vector.from_bvh_reader(bvh_reader, False)
     motion_vector.skeleton = SkeletonBuilder().load_from_bvh(bvh_reader, animated_joints)
     return motion_vector
+
 
 class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, FilesDatabase, SkeletonDatabase, ModelGraphDatabase, MGModelDatabase, CharacterStorage):
     
@@ -64,6 +66,7 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
         FileStorage.__init__(self, data_dir)
         CharacterStorage.__init__(self, data_dir + os.sep +"characters")
         MGModelDatabase.__init__(self)
+        self.model_loader = ModelRegistry.get_instance()
         #ProjectDatabase.__init__(self, schema, server_secret)
         #create local session for data transforms
         session_file = "session.json"
@@ -180,3 +183,27 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
         data = bson.dumps(data)
         data = bz2.compress(data)
         return self.insert_motion(collection, skeleton_name, name, data, meta_data, n_frames, processed)
+    
+    def get_motion_from_file(self, file_id):
+        record = self.tables[self.files_table].get_record_by_id(file_id, ["data", "dataType", "skeleton"])
+        data, data_type = None, None
+        if record is None:
+            print("Error in get motion by id", file_id)
+            return data
+        
+        data, data_type, skeleton_name = record
+        data_type_info = self.get_data_loader_info(data_type, "db")
+        if data_type_info is None:
+            return data
+        return self.sample_motion_from_model(data, data_type_info["script"], data_type, skeleton_name)
+    
+    def sample_motion_from_model(self, model_data, loader_script, data_type, skeleton_name):
+        print("motion_from_model", data_type)
+        loader_script = loader_script.replace("\r\n", "\n")
+        self.model_loader.load_dynamic_module(data_type, loader_script)
+        skeleton = self.get_skeleton(skeleton_name)
+        data = self.model_loader.sample_motion_from_model(data_type, model_data, skeleton)
+        data = bson.dumps(data)
+        data = bz2.compress(data)
+        return data
+    
