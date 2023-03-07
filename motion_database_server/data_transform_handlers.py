@@ -44,7 +44,10 @@ def create_python_command(script_filename, work_dir, body_data,output_type, db_u
     skeleton_type = body_data["skeleton_type"]
     output_id = body_data["output_id"]
     input_data = body_data["input_data"]
-    input_ids, input_types,_ = list(map(list,zip(*input_data)))
+    input_ids, input_types = [], []
+    print(body_data)
+    if len(input_data) > 0:
+        input_ids, input_types,_ = list(map(list,zip(*input_data)))    
     store_log = body_data["store_log"]
     exp_name = body_data["exp_name"]
     cmd = ["python"]
