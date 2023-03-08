@@ -38,7 +38,6 @@ from motion_database_server.file_storage import FileStorage
 from motion_database_server.upload_buffer import UploadBuffer
 from motion_database_server.schema_v2 import DBSchema, TABLES
 from motion_database_server.table import Table
-from motion_db_interface import DataTransformRegistry
 from motion_database_server.utils import load_json_file
 from motion_db_interface.model_db_session import ModelDBSession
 from motion_db_interface.model_registry import ModelRegistry
@@ -68,12 +67,12 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
         MGModelDatabase.__init__(self)
         self.model_loader = ModelRegistry.get_instance()
         #ProjectDatabase.__init__(self, schema, server_secret)
+        self.upload_buffer = UploadBuffer()
         #create local session for data transforms
         session_file = "session.json"
         if os.path.isfile(session_file):
             session_data = load_json_file(session_file)
             session = ModelDBSession("http://localhost:" + str(port) + "/", session_data)
-            self.data_transform_registry = DataTransformRegistry.get_instance(session, data_dir)
     
     def load_skeletons(self):
         self.skeletons = dict()
