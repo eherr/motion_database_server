@@ -48,7 +48,6 @@ class MotionDBHandler(BaseDBHandler):
 class GetMotionHandler(BaseDBHandler):
     def post(self):
         input_str = self.request.body.decode("utf-8")
-        print("get motion",input_str)
         start = time.time()
         input_data = json.loads(input_str)
         data = self.motion_database.get_motion_from_file(input_data["clip_id"])
@@ -302,7 +301,7 @@ class DeleteMotionHandler(BaseDBHandler):
                     self.write("Done")
                     return
                 print("delete",m_id)
-                self.motion_database.delete_motion_by_id(m_id)
+                self.motion_database.delete_file_by_id(m_id)
             self.write("Done")
 
         except Exception as e:
