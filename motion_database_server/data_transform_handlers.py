@@ -41,11 +41,11 @@ n_cpus = 64 # 32
 use_gpu = False
 
 def create_python_command(script_filename, work_dir, body_data,output_type, db_url, db_port, db_user, db_token, hparams_file=None):
-    skeleton_type = body_data["skeleton_type"]
+    input_skeleton = body_data["input_skeleton"]
+    output_skeleton = body_data["output_skeleton"]
     output_id = body_data["output_id"]
     input_data = body_data["input_data"]
     input_ids, input_types = [], []
-    print(body_data)
     if len(input_data) > 0:
         input_ids, input_types,_ = list(map(list,zip(*input_data)))    
     store_log = body_data["store_log"]
@@ -53,7 +53,8 @@ def create_python_command(script_filename, work_dir, body_data,output_type, db_u
     cmd = ["python"]
     cmd += [script_filename]
     cmd += ["--work_dir", work_dir]
-    cmd += ["--skeleton_type", skeleton_type]
+    cmd += ["--input_skeleton", input_skeleton]
+    cmd += ["--output_skeleton", output_skeleton]
     cmd += ["--output_id", str(output_id)]
     cmd += ["--output_type", output_type]
     cmd += ["--input_ids" ] +list(map(str,input_ids))
