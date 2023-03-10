@@ -11,3 +11,4 @@ jwt
 transformations
 rstr
 bson==0.5.9
+paramiko
