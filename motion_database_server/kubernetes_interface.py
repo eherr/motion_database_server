@@ -27,7 +27,12 @@ https://www.programcreek.com/python/example/96324/kubernetes.client.V1Container
 https://github.com/kubernetes-client/python/issues/489
 
 """
-from kubernetes import client, config
+try:
+    from kubernetes import client, config
+except:
+    client = None
+    config = None
+
 
 def create_job_command_string(job_desc):
     repo_url = job_desc["repo_url"]
