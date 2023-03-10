@@ -48,9 +48,9 @@ class IndexHandler(BaseHandler):
     def get(self):
         self.render("index.html", path_prefix=self.path_prefix, 
                     enable_editing=self.enable_editing,
-                    app_server_port=str(self.app.port),
-                    app_server_activate_port_forwarding=self.app.activate_port_forwarding,
-                    app_server_enable_download=self.app.enable_download
+                    server_port=str(self.app.port),
+                    activate_port_forwarding=self.app.activate_port_forwarding,
+                    enable_download=self.app.enable_download
                     )
 
 

@@ -7,18 +7,23 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link href="https://fonts.googleapis.com/css?family=Montserrat|Source+Sans+Pro&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="{{ path_prefix }}assets/jquery-3.3.1.min.js"></script>
   <script src="{{ path_prefix }}assets/Unity/Build/UnityLoader.js"></script>
   <script src="{{ path_prefix }}assets/Unity/TemplateData/UnityProgress.js"></script>
-  <script src="https://kit.fontawesome.com/a72cf7229e.js"></script>
+  <script src="https://kit.fontawesome.com/34bb9f2671.js" crossorigin="anonymous"></script>
   <meta name='enableEditing' content='{{ str(enable_editing) }}'>
-  <meta name='port' content='{{ app_server_port }}'>
-  <meta name='activatePortForwarding' content='{{ str(app_server_activate_port_forwarding) }}'>
-  <meta name='enableDownload' content='{{ str(app_server_enable_download) }}'>
+  <meta name='port' content='{{ server_port }}'>
+  <meta name='activatePortForwarding' content='{{ str(activate_port_forwarding) }}'>
+  <meta name='enableDownload' content='{{ str(enable_download) }}'>
+  <style>html,body{margin:0;padding:0;border:0;font-size:100%;font:inherit;vertical-align:baseline}body{line-height:1}*,:after,:before{box-sizing:border-box;-webkit-box-sizing:border-box;-moz-box-sizing:border-box}body{font-family:Source Sans Pro,sans-serif;font-size:11pt}
+  </style>
+  <link rel="stylesheet" href="{{ path_prefix }}styles.css" media="print" onload="this.media='all'">
+  <noscript><link rel="stylesheet" href="{{ path_prefix }}styles.css"></noscript>
 </head>
 <body>
   <app-root></app-root>
-<script src="{{ path_prefix }}runtime-es2015.js" type="module"></script><script src="{{ path_prefix }}polyfills-es2015.js" type="module"></script><script src="{{ path_prefix }}runtime-es5.js" nomodule></script><script src="{{ path_prefix }}polyfills-es5.js" nomodule></script><script src="{{ path_prefix }}styles-es2015.js" type="module"></script><script src="{{ path_prefix }}styles-es5.js" nomodule></script><script src="{{ path_prefix }}vendor-es2015.js" type="module"></script><script src="{{ path_prefix }}main-es2015.js" type="module"></script><script src="{{ path_prefix }}vendor-es5.js" nomodule></script><script src="{{ path_prefix }}main-es5.js" nomodule></script></body>
+<script src="{{ path_prefix }}runtime.js" type="module"></script>
+<script src="{{ path_prefix }}polyfills.js" type="module"></script>
+<script src="{{ path_prefix }}main.js"  type="module"></script>
+</body>
 </html>
