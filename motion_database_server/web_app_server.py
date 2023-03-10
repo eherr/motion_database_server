@@ -57,9 +57,10 @@ class IndexHandler(BaseHandler):
 class GetMetaHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
-        result_object = dict(id=str(self.app.idCounter), server_port=str(self.app.port),
+        result_object = dict(server_port=str(self.app.port),
                              activate_port_forwarding=self.app.activate_port_forwarding,
-                             enable_download=self.app.enable_download)
+                             enable_download=self.app.enable_download,
+                             enable_data_transforms=self.app.enable_data_transforms)
 
         self.write(json.dumps(result_object))
 
@@ -74,11 +75,11 @@ class WebAppServer(tornado.web.Application):
         self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
         self.enable_download = kwargs.get("enable_download", False)
         self.ssl_options = kwargs.get("ssl_options", None)
-        self.activate_user_authentification = kwargs.get("activate_user_authentification", True) 
+        self.activate_user_authentification = kwargs.get("activate_user_authentification", True)
+        self.enable_data_transforms = kwargs.get("enable_data_transforms", False)
 
         self.request_handler_list = [(r"/", IndexHandler), (r"/get_meta_data", GetMetaHandler)]        
         self.service_contexts = dict()
-        self.idCounter = 0
         self.mutex = threading.Lock()
 
 

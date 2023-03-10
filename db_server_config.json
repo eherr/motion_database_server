@@ -4,6 +4,7 @@
     "port": 8888,
     "enable_editing" : true,
     "activate_port_forwarding": false,
-    "enable_download" : false,
+    "enable_download" : true,
+    "enable_data_transforms" : true,
     "server_secret": "server_secret"
 }
