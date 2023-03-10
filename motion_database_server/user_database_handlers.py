@@ -197,7 +197,7 @@ class AuthenticateHandler(BaseDBHandler):
         if "username" in input_data and "password" in input_data:
             user = input_data["username"]
             password = input_data["password"]
-            user_id = self.motion_database.authenticate_user(user, password)
+            user_id = self.project_database.authenticate_user(user, password)
         else:
             print("missing required fields")
         
