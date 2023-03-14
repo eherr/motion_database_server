@@ -35,6 +35,19 @@ from paramiko.client import SSHClient
 import shutil
 import stat
 
+IS_WINDOWS = platform.startswith("win")
+
+SHELL_SCRIPT_SUFFIX = "sh" 
+if IS_WINDOWS:
+    SHELL_SCRIPT_SUFFIX = "bat"
+
+PYTHON_SCRIPT_SUFFIX = """ 
+from motion_db_interface import parse_arguments
+if __name__ == "__main__":
+    main(**parse_arguments())
+"""
+
+os.environ["WANDB_API_KEY"] = "3195d8372135da1ac5afa1cef7fa2cb9787fc43b"
 partition = "RTX6000,RTX3090,RTXA6000,batch" 
 memory = "64000M"
 n_cpus = 64 # 32
@@ -138,20 +151,17 @@ def run_data_transform_script(tmp_dir, data_transform_name, body_data, script, o
     os.makedirs(tmp_dir, exist_ok=True)
 
     if requirements is not None and requirements != "":
-        suffix = "sh" 
-        if platform == "windows":
-            suffix = "bat"
-        req_file = tmp_dir+os.sep+"requirements." + suffix
+        req_file = tmp_dir+os.sep+"requirements." + SHELL_SCRIPT_SUFFIX
         with open(req_file, "wt") as file:
-            file.write(req_file)
-        if platform != "windows":
+            file.write(requirements)
+        if not IS_WINDOWS:
             os.chmod(req_file, stat.S_IEXEC)
-        subprocess.Popen([req_file]).wait()
+        subprocess.call([req_file])
 
     script_filename = tmp_dir + os.sep+ data_transform_name +".py"
     with open(script_filename, "wt") as file:
         file.write(script)
-    if platform != "windows":
+    if not IS_WINDOWS:
         os.chmod(script_filename, stat.S_IEXEC)
     if hparams is not None:
         hparams_file = tmp_dir+os.sep+"hparams.json"
@@ -182,6 +192,7 @@ class RunDataTransformHandler(BaseDBHandler):
                     data_transform_script = data_transform_info["script"]
                     requirements = data_transform_info["requirements"]
                     data_transform_script = data_transform_script.replace("\r\n", "\n")
+                    data_transform_script += PYTHON_SCRIPT_SUFFIX
                     output_type = data_transform_info["outputType"]
                     cluster_config = data_transform_info.get("cluster_config", None)
                     hparams = body_data.get("hparams",None)
