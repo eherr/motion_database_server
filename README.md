@@ -3,9 +3,9 @@
 The Tornado-based web server provdes a REST interface to an SQLite database for the management of skeleton animation data and machine learning models using a collections, tags and skeletons. The database is integrated with [anim_utils](https://github.com/eherr/anim_utils) using a [Python client](https://github.com/eherr/motion_db_interface). To visualize the motions in the database a Unity WebGL client is provided.   
 
 
-![Screenshot](doc/images/screenshot.png)
+![Screenshot](doc/images/webclient.gif)
 <p align="center">
-<em>Screenshot of the web client.</em>
+<em>Web client</em>
 
 To edit and annotate data in the database, the [motion_preprocessing_tool](https://github.com/eherr/motion_preprocessing_tool) can be used. Motion editing functions can also be registered as data transforms to be executed via the web client on a batch of motions.
 
