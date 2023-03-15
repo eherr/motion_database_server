@@ -54,125 +54,112 @@ COLLECT_TABLE = [("name",TEXT_T),
                     ("owner",TEXT_T), 
                     ("parent",INT_T), 
                     ("public",INT_T)]
-SKELETON_TABLE = [("name",TEXT_T),
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T),
-                    ("owner",TEXT_T)]
-MOTION_TABLE = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T), 
-                    ("subject",TEXT_T), 
-                    ("numFrames",INT_T),  
-                    ("source",TEXT_T)]
-DATA_TABLE = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T),
-                    ("numFrames",INT_T),  
-                    ("source",TEXT_T)]
-MODELS_TABLE = [("name",TEXT_T),
-            ("collection",INT_T), 
-            ("skeleton",INT_T), 
-            ("data",BLOB_T), 
-            ("metaData",BLOB_T)]
-GRAPH_TABLE = [("name",TEXT_T),
-                ("skeleton",INT_T), 
-                ("data",BLOB_T)]
-USER_TABLE = [("name",TEXT_T),
-    ("password",TEXT_T), 
-    ("role",TEXT_T), 
-    ("sharedAccessGroups",TEXT_T), 
-    ("email",TEXT_T)]
-USER_GROUPS_TABLE = [("name",TEXT_T), # need to be unique
-            ("owner",INT_T),     # user id
-            ("users",TEXT_T)]   #  list of user ids 
-EXPERIMENTS_TABLE = [("name",TEXT_T), # need to be unique
-                    ("project",INT_T), 
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T),  
-                    ("owner",INT_T),     # user id 
-                     #optional
-                    ("clusterConfig",TEXT_T), # image, reosurces, start cmd
-                    ("codeURL",TEXT_T),  
-
-                    ("config",TEXT_T),   
-                    ("model",INT_T),  #result
-                    ("logFile",TEXT_T),
-                    ("logFields",TEXT_T),
-                    ("externalURL",TEXT_T)
-                    ] 
-MODEL_TYPES_TABLE = [("name",TEXT_T), # need to be unique
-            ("requirements",TEXT_T)
-]
-MODEL_EVAL_SCRIPTS_TABLE = [("modelType",TEXT_T),
-            ("engine",TEXT_T),
-            ("script",INT_T), 
-            ("requirements",TEXT_T)
-]
-TABLES2 = dict()
-TABLES2["collections"] = COLLECT_TABLE
-TABLES2["skeletons"] = SKELETON_TABLE
-TABLES2["motion_clips"] = MOTION_TABLE
-TABLES2["preprocessed_data"] = DATA_TABLE
-TABLES2["models"] = MODELS_TABLE
-TABLES2["graphs"] = GRAPH_TABLE
-TABLES2["users"] = USER_TABLE
-TABLES2["user_groups"] = USER_GROUPS_TABLE
-TABLES2["experiments"] = EXPERIMENTS_TABLE
-
-
-
-TABLES3 = dict()
-TABLES3["collections"] = COLLECT_TABLE
-TABLES3["skeletons"] = [("name",TEXT_T),
+TABLES = dict()
+TABLES["collections"] = COLLECT_TABLE
+TABLES["skeletons"] = [("name",TEXT_T),
                     ("data",TEXT_T), 
                     ("metaData",TEXT_T),
                     ("owner",TEXT_T)
                     ]
-TABLES3["motions"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",TEXT_T), 
-                    ("metaData",TEXT_T), 
-                    ("subject",TEXT_T),
-                    ("numFrames",INT_T), 
-                    ("format",TEXT_T), 
-                    ("source",TEXT_T),  
-                    ("processed",INT_T)]
-TABLES3["models"] = [("name",TEXT_T),
+TABLES["users"] = [("name",TEXT_T),
+                    ("password",TEXT_T), 
+                    ("role",TEXT_T), 
+                    ("email",TEXT_T)]
+TABLES["projects"] = [("name",TEXT_T), 
+                    ("owner",INT_T),   
+                    ("collection",INT_T),   
+                    ("public",INT_T)]  
+TABLES["project_members"] = [("user",INT_T), ("project",INT_T)] 
+
+
+
+
+TABLES["files"] = [("name",TEXT_T),
                     ("collection",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",TEXT_T), 
                     ("metaData",TEXT_T),
-                    ("format",TEXT_T)]
-TABLES3["model_graphs"] = [("name",TEXT_T),
+                    ("dataType",TEXT_T),
+                    ("numFrames",INT_T),
+                    ("comment",TEXT_T),
+                    ("subject",TEXT_T),
+                    ("source",TEXT_T),
+                    ("processed",INT_T)]
+
+TABLES["data_types"] =  [("name",TEXT_T), # need to be unique
+                ("requirements",TEXT_T),
+                ("isModel",INT_T),
+                ("isTimeSeries",INT_T),
+                ("isSkeletonMotion",INT_T),
+                ("isProcessed",INT_T)
+                ]
+
+TABLES["data_loaders"] = [("dataType",TEXT_T),
+            ("engine",TEXT_T),
+            ("script",INT_T), 
+            ("requirements",TEXT_T)]
+
+TABLES["data_transforms"] = [("name",TEXT_T),
+            ("script",TEXT_T),
+            ("parameters",TEXT_T),
+            ("requirements",TEXT_T),
+            ("outputIsCollection",INT_T),
+            ("outputType",TEXT_T)]
+
+TABLES["data_transform_inputs"] = [("dataTransform",INT_T),
+            ("dataType",TEXT_T),
+            ("isCollection",INT_T)]
+
+
+#experiments are instances of data transforms
+TABLES["experiments"] = [("name",TEXT_T), # need to be unique
+                    ("collection",INT_T), 
+                    ("skeleton",INT_T), 
+                    ("dataTransform",INT_T),
+                    ("config",TEXT_T),   
+                    ("logFile",TEXT_T),
+                    ("logFields",TEXT_T),
+                    ("externalURL",TEXT_T),  
+                    ("owner", INT_T),
+                    ("output",INT_T) # can be collection or file
+                    ] 
+TABLES["experiment_inputs"] = [
+            ("dataTransformInput",INT_T),
+            ("experiment",INT_T),
+            ("input",INT_T)]
+
+TABLES["tags"] =  [("name",TEXT_T), # need to be unique
+                ]
+
+TABLES["data_type_taggings"] =  [("tag",TEXT_T), # need to be unique
+                                 ("dataType",TEXT_T)]
+
+
+TABLES["model_graphs"] = [("name",TEXT_T),
                     ("project",INT_T), 
                     ("skeleton",INT_T), 
                     ("data",TEXT_T)]
-TABLES3["users"] = [("name",TEXT_T),
-                    ("password",TEXT_T), 
-                    ("role",TEXT_T), 
-                    ("email",TEXT_T)]
-TABLES3["projects"] = [("name",TEXT_T), 
-                    ("owner",INT_T),   
-                    ("collection",INT_T),   
-                    ("public",INT_T)]  
-TABLES3["project_members"] = [("user",INT_T), ("project",INT_T)]  
-TABLES3["experiments"] = EXPERIMENTS_TABLE
-TABLES3["model_types"] = MODEL_TYPES_TABLE
-TABLES3["model_evaluation_scripts"] = MODEL_EVAL_SCRIPTS_TABLE
-
-
-
+TABLES["tags"] = [
+            ("name",INT_T)]
+TABLES["data_type_taggings"] = [
+            ("dataType",TEXT_T),
+            ("tag",INT_T)]
+import sqlite3
 
 class DBSchema:
     def __init__(self, tables):
         self.tables = tables
 
-    def create_tables(self, db):
+    def create_database(self, path):
+        con = sqlite3.connect(path)
         for t_name in self.tables:
-            db.create_table(t_name, self.tables[t_name], replace=True)
-        
+            self.create_table(con, t_name, self.tables[t_name])
+        con.close()
+
+    def create_table(self, con, table_name, columns):
+        col_string = ''' (ID INTEGER PRIMARY KEY, '''
+        for c_name, c_type in columns:
+            col_string += "'"+c_name+"' "+c_type+"," 
+        col_string += '''  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);'''
+        con.execute('''CREATE TABLE '''+table_name+col_string)
+        con.commit()

@@ -20,13 +20,31 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-from motion_database_server.motion_database import MotionDatabase
+import argparse
+from motion_database_server.schema import DBSchema, TABLES
+from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.utils import load_json_file
+
+
+def create_database(db_path, project_name, user_name, pw, email):
+    schema = DBSchema(TABLES)
+    schema.create_database(db_path)
+    project_db = ProjectDatabase(schema)
+    project_db.connect_to_database(db_path)
+    user_id = project_db.create_user(user_name, pw, email, "admin", [])
+    project_db.create_project(project_name, user_id, True)
+    
 
 
 CONFIG_FILE = "db_server_config.json"
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
-    db = MotionDatabase()
-    db_path = config["db_path"]
-    db.create_database(db_path)
+    parser = argparse.ArgumentParser(description='Create database.')
+    parser.add_argument('project_name', nargs='?', help='project_name')
+    parser.add_argument('user_name', nargs='?', help='user name')
+    parser.add_argument('pw', nargs='?', help='password')
+    parser.add_argument('email', nargs='?', help='email')
+    args = parser.parse_args()
+    kwargs = vars(args)
+    if args.db_path is not None:
+        create_database(config["db_path"], **kwargs)

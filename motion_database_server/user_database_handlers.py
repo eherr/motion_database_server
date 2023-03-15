@@ -42,10 +42,10 @@ class AddUserHandler(BaseDBHandler):
            email = input_data["email"]
            role = input_data["role"] # maybe limit the role
            shared_access_groups = "[]"
-           success = self.project_database.create_user(user_name, password, email, role, shared_access_groups)
+           new_id = self.project_database.create_user(user_name, password, email, role, shared_access_groups)
 
            response_dict = dict()
-           response_dict["success"] = success
+           response_dict["success"] = new_id > -1
            response = json.dumps(response_dict)
            self.write(response)
         except Exception as e:

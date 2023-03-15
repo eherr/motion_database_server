@@ -127,7 +127,7 @@ class UserDatabase(DatabaseWrapper):
         data["email"] = email
         data["role"] = role
         new_id = self.tables[self.user_table].create_record(data)
-        return True
+        return new_id
     
     def edit_user(self, user_id, data):
         print("update user",user_id)
