@@ -34,25 +34,20 @@ pip install -r requirements.txt
 
 5. Create a new empty database: 
 ```bat
-python create_database.py
+python create_database.py PROJECT_NAME ADMIN_NAME ADMIN_PASSWORD ADMIN_EMAIL
 ```
 
-6. Add a first user for remote database editing: 
+6. Add a first skeleton using an example BVH file: 
 ```bat
-python create_user.py root password admin none
+python import_skeleton.py SKELETON_NAME BVH_FILE
 ```
 
-7. Add a first skeleton using an example BVH file: 
+7. Import BVH files from a directory specifying the previously imported skeleton:
 ```bat
-python import_skeleton.py skeleton_name bvh_filename
+python import_bvh_from_directory.py PROJECT_NAME SKELETON_NAME DIRECTORY_PATH
 ```
 
-8. Import BVH files from a directory specifying the previously imported skeleton:
-```bat
-python import_bvh_from_directory.py skeleton_name directory_path
-```
-
-9. Start the web server: 
+8. Start the web server: 
 ```bat
 python main.py
 ```

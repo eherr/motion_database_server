@@ -86,9 +86,9 @@ def import_directory(db_path, project_name, skeleton_name, directory):
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
     parser = argparse.ArgumentParser(description='Import motions to db.')
+    parser.add_argument('project_name', nargs='?', help='Project Name')
     parser.add_argument('skeleton_name', nargs='?', help='Type of skeleton already in the database.')
     parser.add_argument('directory', nargs='?', help='Directory containing BVH files')
-    parser.add_argument('project_name', nargs='?', help='Project Name')
     args = parser.parse_args()
     
     if args.skeleton_name is not None and args.directory is not None and args.project_name is not None:
