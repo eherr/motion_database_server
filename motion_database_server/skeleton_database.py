@@ -46,11 +46,17 @@ class SkeletonDatabase(object):
                 print("Could not load skeleton model", e.args)
         return skeleton
     
-    def add_new_skeleton(self, name, data=b"x00", meta_data=b"x00", owner=1):
+    def add_new_skeleton(self, name, data, meta_data, owner=1):
         skeleton_list = self.get_name_list(self.skeleton_table)
         if name != "" and name not in skeleton_list.values:
-            records = [(name, data, meta_data, owner)]
-            self.insert_records(self.skeleton_table, ["name", "data", "metaData", "owner"], records)
+            data = dict()
+            data["name"] = name
+            data["owner"] = owner
+            if data is not None:
+                data["data"] = data
+            if meta_data is not None:
+                data["meteData"] = meta_data
+            self.tables[self.skeleton_table].create_record(data)
             self.skeletons[name] = self.load_skeleton(name)
             return True
         else:

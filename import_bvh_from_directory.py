@@ -23,13 +23,15 @@
 import glob
 import os
 import bson
+import bz2
 import argparse
-from motion_database import MotionDatabase
-from utils import load_json_file
+from motion_database_server.schema import DBSchema, TABLES
+from motion_database_server.project_database import ProjectDatabase
+from motion_database_server.motion_file_database import MotionFileDatabase
+from motion_database_server.utils import load_json_file
 from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder
 
 CONFIG_FILE = "db_server_config.json"
-ROOT_COLLECTION_ID = 0
 
 def import_motion(db,new_id, skeleton, skeleton_name, filename):
     bvh = BVHReader(filename)
@@ -40,8 +42,8 @@ def import_motion(db,new_id, skeleton, skeleton_name, filename):
     data = mv.to_db_format()
     public = 0
     n_frames = mv.n_frames
-    data =  bson.dumps(data)
-    meta_data = b"x00"
+    data =  bz2.compress(bson.dumps(data))
+    meta_data = None
     db.insert_motion(new_id, skeleton_name, name, data, meta_data, n_frames, public)
 
 def load_skeleton(filename):
@@ -49,30 +51,46 @@ def load_skeleton(filename):
     skeleton = SkeletonBuilder().load_from_bvh(bvh)
     return skeleton
 
-def main(args):
-    if args.skeleton_name is not None and args.directory is not None:
-        db = MotionDatabase()
-        db_path = config["db_path"]
-        db.connect(db_path)
-        skeleton_list = [name for s_id, name in db.get_skeleton_list()]
-        if args.skeleton_name not in skeleton_list:
-            print("skeleton",args.skeleton_name,"not in skeleton list", skeleton_list)
-            return
-        directory_name = args.directory.split(os.sep)[-1]
-        print("create collection",directory_name)
-        new_id = db.add_new_collection_by_id(directory_name, "collection", ROOT_COLLECTION_ID)
-        skeleton = None
-        for filename in glob.glob(args.directory+os.sep+"*.bvh"):
-            if skeleton is None:
-                skeleton = load_skeleton(filename)
-            import_motion(db, new_id, skeleton, args.skeleton_name, filename)
-        db.close()
+def get_parent_collection(db_path, project_name):
+    schema = DBSchema(TABLES)
+    project_db = ProjectDatabase(schema)
+    project_db.connect(db_path)
+    project_id = project_db.get_project_id(project_name)
+    parent_collection_id = None
+    if project_id > 0:
+        project_info = project_db.get_project_info(project_id)
+        parent_collection_id = project_info["collection"]
+    project_db.close()
+    return parent_collection_id
+
+def import_directory(db_path, project_name, skeleton_name, directory):
+    schema = DBSchema(TABLES)
+   
+    parent_collection_id = get_parent_collection(db_path, project_name)
+    motion_db = MotionFileDatabase(schema)
+    motion_db.connect(db_path)
+    skeleton_list = [name for s_id, name in motion_db.get_skeleton_list()]
+    if skeleton_name not in skeleton_list:
+        print("skeleton",skeleton_name,"not in skeleton list", skeleton_list)
+        return
+    directory_name = directory.split(os.sep)[-1]
+    print("create collection",directory_name)
+    new_id = motion_db.add_new_collection_by_id(directory_name, "collection", parent_collection_id)
+    skeleton = None
+    for filename in glob.glob(directory+os.sep+"*.bvh"):
+        if skeleton is None:
+            skeleton = load_skeleton(filename)
+        import_motion(motion_db, new_id, skeleton, skeleton_name, filename)
+    motion_db.close()
 
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
     parser = argparse.ArgumentParser(description='Import motions to db.')
     parser.add_argument('skeleton_name', nargs='?', help='Type of skeleton already in the database.')
     parser.add_argument('directory', nargs='?', help='Directory containing BVH files')
+    parser.add_argument('project_name', nargs='?', help='Project Name')
     args = parser.parse_args()
-    main(args)
+    
+    if args.skeleton_name is not None and args.directory is not None and args.project_name is not None:
+        import_directory(config["db_path"], args.project_name, args.skeleton_name, args.directory)
   

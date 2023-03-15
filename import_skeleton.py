@@ -21,12 +21,32 @@
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
 import bson
+import bz2
 import argparse
-from motion_database import MotionDatabase
-from utils import load_json_file
+from motion_database_server.schema import DBSchema, TABLES
+from motion_database_server.motion_file_database import MotionFileDatabase
+from motion_database_server.utils import load_json_file
 from anim_utils.animation_data import BVHReader, SkeletonBuilder
 
 CONFIG_FILE = "db_server_config.json"
+
+def add_skeleton(db_path, skeleton_path, name):
+    
+    schema = DBSchema(TABLES)
+    db = MotionFileDatabase(schema)
+    db.connect(db_path)
+    bvh = BVHReader(skeleton_path)
+    skeleton = SkeletonBuilder().load_from_bvh(bvh)
+    data = skeleton.to_unity_format()
+    meta_data = dict()
+    meta_data["cos_map"] = dict()
+    meta_data["joints"] = dict()
+    meta_data["joint_constraints"] = dict()
+    data = bz2.compress(bson.dumps(data))
+    meta_data = bz2.compress(bson.dumps(meta_data))
+    print("add new skeleton", name)
+    db.add_new_skeleton(args.name, data, meta_data)
+    db.close()
 
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
@@ -35,18 +55,5 @@ if __name__ == "__main__":
     parser.add_argument('skeleton_path', nargs='?', help='BVH file')
     args = parser.parse_args()
     if args.name is not None and args.skeleton_path is not None:
-        db = MotionDatabase()
         db_path = config["db_path"]
-        db.connect(db_path)
-        bvh = BVHReader(args.skeleton_path)
-        skeleton = SkeletonBuilder().load_from_bvh(bvh)
-        data = skeleton.to_unity_format()
-        meta_data = dict()
-        meta_data["cos_map"] = dict()
-        meta_data["joints"] = dict()
-        meta_data["joint_constraints"] = dict()
-        data = bson.dumps(data)
-        meta_data = bson.dumps(meta_data)
-        print("add new skeleton", args.name)
-        db.add_new_skeleton(args.name, data, meta_data)
-        db.close()
+        add_skeleton(db_path, args.skeleton_path, args.name)

@@ -105,7 +105,7 @@ class NewSkeletonHandler(BaseDBHandler):
                         data = bson.dumps(json.loads(input_data["data"]))
                         data = bz2.compress(data)
                     
-                    meta_data = b"x00"
+                    meta_data = None
                     if "meta_data" in input_data:
                         meta_data = bson.dumps(json.loads(input_data["meta_data"]))
                         meta_data = bz2.compress(meta_data)
