@@ -54,7 +54,7 @@ python import_bvh_from_directory.py PROJECT_NAME SKELETON_NAME DIRECTORY_PATH
 python main.py
 ```
 
-10. Build the web client using angular: 
+9. Build the web client using angular: 
 ```bat
 cd webclient 
 ng build
