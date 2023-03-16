@@ -1,40 +1,6 @@
-if False:
-    FILE_TABLES = dict()
-    FILE_TABLES["data_files"] = [("name",TEXT_T),
-                        ("collection",INT_T), 
-                        ("skeleton",INT_T), 
-                        ("data",TEXT_T), 
-                        ("metaData",TEXT_T),
-                        ("dataType",TEXT_T),
-                        ("numFrames",INT_T),
-                        ("comment",TEXT_T),
-                        ("subject",TEXT_T),
-                        ("source",TEXT_T),
-                        ("processed",INT_T)]
-
-    FILE_TABLES["data_types"] =  [("name",TEXT_T), # need to be unique
-                    ("requirements",TEXT_T),
-                    ("isModel",INT_T),
-                    ("isTimeSeries",INT_T),
-                    ("isSkeletonMotion",INT_T)
-                    ]
-
-    FILE_TABLES["data_loaders"] = [("dataType",TEXT_T),
-                ("engine",TEXT_T),
-                ("script",TEXT_T), 
-                ("requirements",TEXT_T)]
-
-    FILE_TABLES["data_transforms"] = [("name",TEXT_T),("script",TEXT_T),
-                ("parameters",TEXT_T),
-                ("requirements",TEXT_T),
-                ("outputIsCollection",INT_T),
-                ("outputType",TEXT_T)]
-
-    FILE_TABLES["data_transform_inputs"] = [("dataTransform",INT_T),
-                ("dataType",TEXT_T),
-                ("isCollection",INT_T)]
-
-
+import os
+from pathlib import Path
+from .table import Table
 
 class FilesDatabase:
     files_table = "files"   
@@ -147,7 +113,7 @@ class FilesDatabase:
         input_data = dict()
         input_data["dataType"] = data["name"]
         self.tables[self.data_loader_table].update_record_by_condition(conditions, input_data)
-        
+
         input_data = dict()
         input_data["dataType"] = data["name"]
         self.tables[self.data_type_taggings_table].update_record_by_condition(conditions, input_data)
@@ -220,4 +186,42 @@ class FilesDatabase:
         if tag is not None:
             condition += [("tag",tag)]
         return self.tables[self.data_type_taggings_table].delete_record_by_condition(condition)
+
+    def has_tag(self, data_type, tag):
+        condition = [("dataType",data_type), ("tag", tag)]
+        tag_records = self.tables[self.data_type_taggings_table].get_record_by_condition(condition, ["ID"])
+        return tag_records is not None and len(tag_records)> 0
     
+    def check_file_consistency(self):
+        p = Path(self.data_dir + os.sep + self.files_table)
+        data_files = list(map(str, [f.name for f in p.glob("**/*.data")]))
+        meta_data_files = list(map(str, [f.name for f in p.glob("**/*.metaData")]))
+        data_files_ref, meta_data_files_ref = self.get_file_references()
+        data_delta = set(data_files).difference(data_files_ref)
+        meta_data_delta = set(meta_data_files).difference(meta_data_files_ref)
+        missing_files = [ f for f in data_delta if f not in data_files]
+        missing_meta_files = [ f for f in meta_data_delta if f not in meta_data_files]
+
+        missing_references = [ f for f in data_delta if f not in data_files_ref]
+        missing_meta_references = [ f for f in meta_data_delta if f not in meta_data_files_ref]
+
+        print("missing_files",missing_files)
+        print("missing_meta_files",missing_meta_files)
+        print("missing_references",missing_references)
+        print("missing_meta_references",missing_meta_references)
+        #self.check_if_files_are_in_table(data_files, meta_data_files)
+        #self.check_if_files_in_table_exist()
+
+    def get_file_references(self):
+        records = self.tables[self.files_table].db.query_table(self.files_table, ["data", "metaData"], [])
+        return zip(*records)
+    
+    def has_data_file(self, file_name):        
+        condition = [("data",file_name)]
+        file_record = self.tables[self.files_table].get_record_by_condition(condition, ["ID"])
+        return file_record is not None
+    
+    def has_meta_data_file(self, file_name):        
+        condition = [("metaData",file_name)]
+        file_record = self.tables[self.files_table].get_record_by_condition(condition, ["ID"])
+        return file_record is not None
