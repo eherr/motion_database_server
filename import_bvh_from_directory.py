@@ -68,7 +68,7 @@ def import_directory(db_path, project_name, skeleton_name, directory):
    
     parent_collection_id = get_parent_collection(db_path, project_name)
     motion_db = MotionFileDatabase(schema)
-    motion_db.connect(db_path)
+    motion_db.connect_to_database(db_path)
     skeleton_list = [name for s_id, name in motion_db.get_skeleton_list()]
     if skeleton_name not in skeleton_list:
         print("skeleton",skeleton_name,"not in skeleton list", skeleton_list)

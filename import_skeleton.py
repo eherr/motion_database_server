@@ -34,7 +34,7 @@ def add_skeleton(db_path, skeleton_path, name):
     
     schema = DBSchema(TABLES)
     db = MotionFileDatabase(schema)
-    db.connect(db_path)
+    db.connect_to_database(db_path)
     bvh = BVHReader(skeleton_path)
     skeleton = SkeletonBuilder().load_from_bvh(bvh)
     data = skeleton.to_unity_format()

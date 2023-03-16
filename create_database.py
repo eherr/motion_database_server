@@ -46,5 +46,5 @@ if __name__ == "__main__":
     parser.add_argument('email', nargs='?', help='email')
     args = parser.parse_args()
     kwargs = vars(args)
-    if args.db_path is not None:
+    if args.db_path is not None and args.user_name is not None and args.pw is not None and args.email is not None:
         create_database(config["db_path"], **kwargs)
