@@ -28,13 +28,13 @@ from motion_database_server.experiment_database_handlers import EXPERIMENT_DB_HA
 from motion_database_server.data_transform_handlers import DATA_TRANSFORM_HANDLER_LIST
 from motion_database_server.service_base import ServiceBase
 from motion_database_server.database_wrapper import DatabaseWrapper
-from motion_database_server.schema_v2 import DBSchema, TABLES
+from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.table import Table
 from motion_database_server.utils import load_json_file
 
 
 class DataTransformDatabaseService(ServiceBase, DatabaseWrapper, DataTransformDatabase, ExperimentDatabase):
-    """ Wrapper for the DataTransformDatabase class that can be registered as a service
+    """ Wrapper service for the DataTransformDatabase
     """
     service_name = "DATA_TRANSFORM_DB"
     def __init__(self, **kwargs):

@@ -25,11 +25,11 @@ from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.user_database_handlers import USER_DB_HANDLER_LIST
 from motion_database_server.project_database_handlers import PROJECT_DB_HANDLER_LIST
 from motion_database_server.service_base import ServiceBase
-from motion_database_server.schema_v2 import DBSchema, TABLES
+from motion_database_server.schema import DBSchema, TABLES
 
 
 class ProjectDatabaseService(ServiceBase):
-    """ Wrapper for the Project Service class that can be registered as a service
+    """ Wrapper service for the ProjectDatabase.
     """
     service_name = "PROJECT_DB"
     def __init__(self, **kwargs):

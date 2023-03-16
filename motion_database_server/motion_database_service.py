@@ -38,7 +38,7 @@ from motion_database_server.service_base import ServiceBase
 
 
 class MotionDatabaseService(ServiceBase):
-    """ Wrapper for the MotionDatabase class that can be registered as a service
+    """ Wrapper service for the MotionFileDatabase.
     """
     service_name = "MOTION_DB"
     def __init__(self, **kwargs):

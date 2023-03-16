@@ -36,7 +36,7 @@ from anim_utils.animation_data.motion_vector import MotionVector
 from motion_database_server.character_storage import CharacterStorage
 from motion_database_server.file_storage import FileStorage
 from motion_database_server.upload_buffer import UploadBuffer
-from motion_database_server.schema_v2 import DBSchema, TABLES
+from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.table import Table
 from motion_database_server.utils import load_json_file
 from motion_db_interface.model_db_session import ModelDBSession
