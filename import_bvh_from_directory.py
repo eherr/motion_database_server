@@ -20,11 +20,11 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import glob
 import os
 import bson
 import bz2
 import argparse
+from pathlib import Path
 from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.motion_file_database import MotionFileDatabase
@@ -33,12 +33,11 @@ from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder
 
 CONFIG_FILE = "db_server_config.json"
 
-def import_motion(db,new_id, skeleton, skeleton_name, filename):
+def import_motion(db,new_id, skeleton_name, filename):
     bvh = BVHReader(filename)
     name = filename.split(os.sep)[-1]
     mv = MotionVector()
     mv.from_bvh_reader(bvh)
-    mv.skeleton = skeleton
     data = mv.to_db_format()
     public = 0
     n_frames = mv.n_frames
@@ -63,9 +62,18 @@ def get_parent_collection(db_path, project_name):
     project_db.close()
     return parent_collection_id
 
-def import_directory(db_path, project_name, skeleton_name, directory):
+
+def import_directory_recursively(db: MotionFileDatabase, skeleton_name: str, collection_id: int, path: Path):
+    for child_path in path.iterdir():
+        if child_path.is_dir():
+            new_collection_id = db.add_new_collection_by_id(child_path.name, "collection", collection_id)
+            import_directory_recursively(db, skeleton_name, new_collection_id, child_path)
+        elif child_path.suffix == ".bvh":
+            filename = str(child_path)
+            import_motion(db, collection_id, skeleton_name, filename)
+
+def import_directory_to_project(db_path, project_name, skeleton_name, directory):
     schema = DBSchema(TABLES)
-   
     parent_collection_id = get_parent_collection(db_path, project_name)
     motion_db = MotionFileDatabase(schema)
     motion_db.connect_to_database(db_path)
@@ -75,12 +83,9 @@ def import_directory(db_path, project_name, skeleton_name, directory):
         return
     directory_name = directory.split(os.sep)[-1]
     print("create collection",directory_name)
-    new_id = motion_db.add_new_collection_by_id(directory_name, "collection", parent_collection_id)
-    skeleton = None
-    for filename in glob.glob(directory+os.sep+"*.bvh"):
-        if skeleton is None:
-            skeleton = load_skeleton(filename)
-        import_motion(motion_db, new_id, skeleton, skeleton_name, filename)
+    new_collection_id = motion_db.add_new_collection_by_id(directory_name, "collection", parent_collection_id)
+    parent_directory = Path(directory)
+    import_directory_recursively(motion_db, skeleton_name, new_collection_id, parent_directory)
     motion_db.close()
 
 if __name__ == "__main__":
@@ -92,5 +97,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.skeleton_name is not None and args.directory is not None and args.project_name is not None:
-        import_directory(config["db_path"], args.project_name, args.skeleton_name, args.directory)
+        import_directory_to_project(config["db_path"], args.project_name, args.skeleton_name, args.directory)
   
