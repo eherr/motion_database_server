@@ -29,7 +29,7 @@ from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.project_database import ProjectDatabase
 from motion_database_server.motion_file_database import MotionFileDatabase
 from motion_database_server.utils import load_json_file
-from anim_utils.animation_data import BVHReader, MotionVector, SkeletonBuilder
+from anim_utils.animation_data import BVHReader, MotionVector
 
 CONFIG_FILE = "db_server_config.json"
 
@@ -45,10 +45,6 @@ def import_motion(db,new_id, skeleton_name, filename):
     meta_data = None
     db.insert_motion(new_id, skeleton_name, name, data, meta_data, n_frames, public)
 
-def load_skeleton(filename):
-    bvh = BVHReader(filename)
-    skeleton = SkeletonBuilder().load_from_bvh(bvh)
-    return skeleton
 
 def get_parent_collection(db_path, project_name):
     schema = DBSchema(TABLES)
@@ -63,21 +59,21 @@ def get_parent_collection(db_path, project_name):
     return parent_collection_id
 
 
-def import_directory_recursively(db: MotionFileDatabase, skeleton_name: str, collection_id: int, path: Path):
+def import_directories_recursively(db: MotionFileDatabase, skeleton_name: str, collection_id: int, path: Path):
     for child_path in path.iterdir():
         if child_path.is_dir():
             new_collection_id = db.add_new_collection_by_id(child_path.name, "collection", collection_id)
-            import_directory_recursively(db, skeleton_name, new_collection_id, child_path)
+            import_directories_recursively(db, skeleton_name, new_collection_id, child_path)
         elif child_path.suffix == ".bvh":
             filename = str(child_path)
             import_motion(db, collection_id, skeleton_name, filename)
 
-def import_directory_to_project(db_path, project_name, skeleton_name, directory):
+def import_directories_to_project(db_path, project_name, skeleton_name, directory):
     schema = DBSchema(TABLES)
     parent_collection_id = get_parent_collection(db_path, project_name)
     motion_db = MotionFileDatabase(schema)
     motion_db.connect_to_database(db_path)
-    skeleton_list = [name for s_id, name in motion_db.get_skeleton_list()]
+    skeleton_list = [name for s_id, name, owner in motion_db.get_skeleton_list()]
     if skeleton_name not in skeleton_list:
         print("skeleton",skeleton_name,"not in skeleton list", skeleton_list)
         return
@@ -85,7 +81,7 @@ def import_directory_to_project(db_path, project_name, skeleton_name, directory)
     print("create collection",directory_name)
     new_collection_id = motion_db.add_new_collection_by_id(directory_name, "collection", parent_collection_id)
     parent_directory = Path(directory)
-    import_directory_recursively(motion_db, skeleton_name, new_collection_id, parent_directory)
+    import_directories_recursively(motion_db, skeleton_name, new_collection_id, parent_directory)
     motion_db.close()
 
 if __name__ == "__main__":
@@ -97,5 +93,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     if args.skeleton_name is not None and args.directory is not None and args.project_name is not None:
-        import_directory_to_project(config["db_path"], args.project_name, args.skeleton_name, args.directory)
+        import_directories_to_project(config["db_path"], args.project_name, args.skeleton_name, args.directory)
   
