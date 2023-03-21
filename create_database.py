@@ -23,15 +23,29 @@
 import argparse
 from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.project_database import ProjectDatabase
-from motion_database_server.utils import load_json_file
+from motion_database_server.utils import load_json_file, save_json_file
 
-def create_database(db_path, project_name, user_name, pw, email):
+def create_database(config, project_name, user_name, pw, email):
+    # create database from schema
+    db_path = config["db_path"]
+    server_secret = config["server_secret"]
     schema = DBSchema(TABLES)
     schema.create_database(db_path)
-    project_db = ProjectDatabase(schema)
+
+    # add user and project
+    project_db = ProjectDatabase(schema, server_secret)
     project_db.connect_to_database(db_path)
+    print("created database", db_path)
     user_id = project_db.create_user(user_name, pw, email, "admin", [])
     project_db.create_project(project_name, user_id, True)
+    
+    # generate session file for data transforms
+    playload = {"user_id": user_id, "username": user_name}
+    session = dict()
+    session["user"] = user_name
+    session["token"] = project_db.generate_token(playload)
+    save_json_file(session, "session.json")
+    
     project_db.close()
     
 
@@ -47,4 +61,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     kwargs = vars(args)
     if args.user_name is not None and args.pw is not None and args.email is not None:
-        create_database(config["db_path"], **kwargs)
+        create_database(config, **kwargs)
