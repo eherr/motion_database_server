@@ -1,8 +1,20 @@
 
+from motion_database_server.schema import DBSchema, TABLES
+from motion_database_server.table import Table
+from motion_database_server.database_wrapper import DatabaseWrapper
 
-class DataTransformDatabase:
+class DataTransformDatabase(DatabaseWrapper):
     data_transforms_table = "data_transforms"
     data_transform_inputs_table = "data_transform_inputs"
+    
+    def __init__(self, schema=None):
+        DatabaseWrapper.__init__(self)
+        if schema is None:
+            schema = DBSchema(TABLES)
+        self.schema =schema
+        self.tables = dict()
+        for name in self.schema.tables:
+            self.tables[name] = Table(self, name, self.schema.tables[name])
     
     def get_data_transform_list(self):
         return self.tables[self.data_transforms_table].get_record_list(["ID","name","outputType", "outputIsCollection"])
