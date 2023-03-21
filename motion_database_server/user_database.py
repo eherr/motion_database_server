@@ -27,7 +27,7 @@ import jwt
 import rstr
 import string
 from motion_database_server.database_wrapper import DatabaseWrapper
-from motion_database_server.schema import DBSchema
+from motion_database_server.schema import DBSchema, TABLES
 from motion_database_server.table import Table
 
 JWT_ALGORITHM = 'HS256'
@@ -39,8 +39,8 @@ INT_T = "INTERGER"
 BLOB_T = "BLOB"
 TEXT_T = "TEXT"
 
-TABLES = dict()
-TABLES["users"] = [("name",TEXT_T),
+USER_TABLES = dict()
+USER_TABLES["users"] = [("name",TEXT_T),
                     ("password",TEXT_T), 
                     ("email",TEXT_T), 
                     ("role",TEXT_T)] # is admin or user
@@ -53,6 +53,8 @@ Here is your new password:
 class UserDatabase(DatabaseWrapper):
     user_table = "users"
     def __init__(self, schema, server_secret=None):
+        if schema is None:
+            schema = DBSchema(TABLES)
         self.schema =schema
         self.tables = dict()
         for name in self.schema.tables:
@@ -118,9 +120,6 @@ class UserDatabase(DatabaseWrapper):
         m = hashlib.sha256()
         m.update(bytes(password,"utf-8"))
         password = m.digest()
-        #records = [[name, password, email, role, sharedAccessGroups]]
-        #self.insert_records(self.user_table, ["name", "password", "email","role", "sharedAccessGroups"], records)
-       
         data = dict()
         data["name"] = name
         data["password"] = password
