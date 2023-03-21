@@ -114,8 +114,9 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
         record_data["data"] = motion_data
         if meta_data is not None:
             record_data["metaData"] = meta_data
-        record_data["processed"] = processed
         record_data["dataType"] = "motion"
+        if processed:
+            record_data["dataType"] = "aligned_motion"
         return self.create_file(record_data)
 
     def get_motion_by_id(self, m_id):
