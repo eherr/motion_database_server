@@ -51,8 +51,8 @@ def add_skeleton(db_path, skeleton_path, name):
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
     parser = argparse.ArgumentParser(description='Import skeleton to db.')
-    parser.add_argument('name', nargs='?', help='name')
-    parser.add_argument('skeleton_path', nargs='?', help='BVH file')
+    parser.add_argument('name', help='name')
+    parser.add_argument('skeleton_path', help='BVH file')
     args = parser.parse_args()
     if args.name is not None and args.skeleton_path is not None:
         db_path = config["db_path"]
