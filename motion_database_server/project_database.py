@@ -20,15 +20,8 @@
 # DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
 # USE OR OTHER DEALINGS IN THE SOFTWARE.
-import os
-import json
-import hashlib
-import jwt
-import rstr
-import string
 from motion_database_server.user_database import UserDatabase
-from motion_database_server.schema import DBSchema
-from motion_database_server.table import Table
+from motion_database_server.collection_database import CollectionDatabase
 
 JWT_ALGORITHM = 'HS256'
 
@@ -50,7 +43,7 @@ TABLES["project_members"] = [("user",INT_T), ("project",INT_T)]
 
 
 
-class ProjectDatabase(UserDatabase):
+class ProjectDatabase(UserDatabase, CollectionDatabase):
     projects_table = "projects"
     project_members_table = "project_members"
     def __init__(self, schema, server_secret=None):
