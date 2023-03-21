@@ -10,11 +10,11 @@ def export_data_types(db_path):
     motion_db = MotionFileDatabase(schema)
     motion_db.connect_to_database(db_path)
     data = dict()
-    data["tag_list"] = motion_db.get_tag_list()
+    data["tags"] = [t for t, in motion_db.get_tag_list()]
     data["data_types"] = dict()
     for name, in motion_db.get_data_type_list():
         t_info = motion_db.get_data_type_info(name)
-        t_info["tags"] = motion_db.get_data_type_tag_list(name)
+        t_info["tags"] = [t for t, in motion_db.get_data_type_tag_list(name)]
         data["data_types"][name] = t_info
 
     data["data_loaders"] = dict()
