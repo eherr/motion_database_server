@@ -30,30 +30,29 @@ from anim_utils.animation_data import BVHReader, SkeletonBuilder
 
 CONFIG_FILE = "db_server_config.json"
 
-def add_skeleton(db_path, skeleton_path, name):
+def add_skeleton(db_path, name, bvh_file, skeleton_model_file):
     
     schema = DBSchema(TABLES)
     db = MotionFileDatabase(schema)
     db.connect_to_database(db_path)
-    bvh = BVHReader(skeleton_path)
+    bvh = BVHReader(bvh_file)
     skeleton = SkeletonBuilder().load_from_bvh(bvh)
     data = skeleton.to_unity_format()
-    meta_data = dict()
-    meta_data["cos_map"] = dict()
-    meta_data["joints"] = dict()
-    meta_data["joint_constraints"] = dict()
     data = bz2.compress(bson.dumps(data))
-    meta_data = bz2.compress(bson.dumps(meta_data))
-    print("add new skeleton", name)
-    db.add_new_skeleton(args.name, data, meta_data)
+    meta_data = None
+    if skeleton_model_file is not None:
+        meta_data = load_json_file(skeleton_model_file)
+        meta_data = bz2.compress(bson.dumps(meta_data))
+    db.add_new_skeleton(name, data, meta_data)
     db.close()
 
 if __name__ == "__main__":
     config = load_json_file(CONFIG_FILE)
     parser = argparse.ArgumentParser(description='Import skeleton to db.')
     parser.add_argument('name', help='name')
-    parser.add_argument('skeleton_path', help='BVH file')
+    parser.add_argument('bvh_file', help='BVH file')
+    parser.add_argument('skeleton_model', nargs="?", default=None, help='JSON file')
     args = parser.parse_args()
-    if args.name is not None and args.skeleton_path is not None:
+    if args.name is not None and args.bvh_file is not None:
         db_path = config["db_path"]
-        add_skeleton(db_path, args.skeleton_path, args.name)
+        add_skeleton(db_path, args.name, args.bvh_file, args.skeleton_model)

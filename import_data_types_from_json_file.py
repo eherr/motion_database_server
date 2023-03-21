@@ -5,6 +5,7 @@ from motion_database_server.utils import load_json_file
 from motion_database_server.motion_file_database import MotionFileDatabase
 from motion_database_server.data_transform_database import DataTransformDatabase
 
+
 def import_data_types(db_path, data):
     schema = DBSchema(TABLES)
     motion_db = MotionFileDatabase(schema)
@@ -29,7 +30,6 @@ def import_data_types(db_path, data):
             data_transform_db.create_data_transform_input(dt_input)
     data_transform_db.close()
     return data
-
 
 
 CONFIG_FILE = "db_server_config.json"

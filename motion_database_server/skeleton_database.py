@@ -49,14 +49,14 @@ class SkeletonDatabase(object):
     def add_new_skeleton(self, name, data, meta_data, owner=1):
         skeleton_list = self.get_name_list(self.skeleton_table)
         if name != "" and name not in skeleton_list.values:
-            data = dict()
-            data["name"] = name
-            data["owner"] = owner
+            record = dict()
+            record["name"] = name
+            record["owner"] = owner
             if data is not None:
-                data["data"] = data
+                record["data"] = data
             if meta_data is not None:
-                data["meteData"] = meta_data
-            self.tables[self.skeleton_table].create_record(data)
+                record["metaData"] = meta_data
+            self.tables[self.skeleton_table].create_record(record)
             self.skeletons[name] = self.load_skeleton(name)
             return True
         else:
