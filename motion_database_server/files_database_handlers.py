@@ -269,7 +269,7 @@ class GetDataTypeInfoHandler(BaseDBHandler):
 
 
 
-class DataTypeExporHandler(BaseDBHandler):
+class DataTypeExportHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def get(self):
         try:
@@ -290,6 +290,30 @@ class DataTypeExporHandler(BaseDBHandler):
             self.finish()
 
 
+class DataTypeImportHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            input_data = json.loads(input_str)
+            token = input_data["token"]
+            request_user_id = self.project_database.get_user_id_from_token(token)
+            role = self.project_database.get_user_role(request_user_id)
+            success = False
+            response_dict = dict()
+            if role == "admin":
+                self.motion_database.data_types_from_dict(input_data)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in post")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
 
 FILE_DB_HANDLER_LIST = [(r"/files", GetFileList),
                             (r"/files/add", AddFileHandler),
@@ -303,7 +327,8 @@ FILE_DB_HANDLER_LIST += [(r"/data_types", GetDataTypeList),
                             (r"/data_types/edit", EditDataTypeHandler),
                             (r"/data_types/remove", RemoveDataTypeHandler),
                             (r"/data_types/info", GetDataTypeInfoHandler),
-                             (r"/data_types/export", DataTypeExporHandler)]
+                             (r"/data_types/import", DataTypeImportHandler),
+                             (r"/data_types/export", DataTypeExportHandler)]
 
 class GetDataLoaderList(BaseDBHandler):
     @tornado.gen.coroutine

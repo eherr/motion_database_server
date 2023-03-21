@@ -247,3 +247,4 @@ class FilesDatabase:
                 self.add_data_type_tag(name, tag)
         for name in data["data_loaders"]:
             self.create_data_loader(data["data_loaders"][name])
+            

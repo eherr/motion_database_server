@@ -535,6 +535,29 @@ class DataTransformExportHandler(BaseDBHandler):
         finally:
             self.finish()
 
+class DataTransformImportHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def post(self):
+        try:
+            input_str = self.request.body.decode("utf-8")
+            input_data = json.loads(input_str)
+            token = input_data["token"]
+            request_user_id = self.project_database.get_user_id_from_token(token)
+            role = self.project_database.get_user_role(request_user_id)
+            success = False
+            response_dict = dict()
+            if role == "admin":
+                self.data_transform_service.data_transform_from_dict(input_data)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in post")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
 DATA_TRANSFORM_HANDLER_LIST += [
                             (r"/data_transforms/inputs", GetDataTransformInputList),
                             (r"/data_transforms/inputs/add", AddDataTransformInputHandler),
@@ -542,6 +565,7 @@ DATA_TRANSFORM_HANDLER_LIST += [
                             (r"/data_transforms/inputs/remove", RemoveDataTransformInputHandler),
                             (r"/data_transforms/inputs/removeall", RemoveAllDataTransformInputHandler),
                             (r"/data_transforms/inputs/info", GetDataTransformInputInfoHandler),
+                            (r"/data_transforms/import", DataTransformImportHandler),
                             (r"/data_transforms/export", DataTransformExportHandler)
                             ]
 
