@@ -34,35 +34,40 @@ pip install git+https://github.com/eherr/motion_db_interface
 pip install -r requirements.txt
 ```
 
-5. Create a new empty database: 
+5. Create a new database: 
 ```bat
 python create_database.py PROJECT_NAME ADMIN_NAME ADMIN_PASSWORD ADMIN_EMAIL
 ```
 
-6. Add a first skeleton using an example BVH file: 
+6. Import default data types and data transforms:
+```bat
+python import_data_types.py default_data_types.json
+```
+
+7. Add a first skeleton using an example BVH file: 
 ```bat
 python import_skeleton.py SKELETON_NAME BVH_FILE
 ```
 
-7. Import BVH files from a directory specifying the previously imported skeleton:
+8. Import BVH files from a directory specifying the previously imported skeleton:
 ```bat
 python import_bvh_from_directory.py PROJECT_NAME SKELETON_NAME DIRECTORY_PATH
 ```
 
-8. Start the web server: 
+9. Start the web server: 
 ```bat
 python main.py
 ```
 
-9. Build the web client using angular: 
+10. Build the web client using angular: 
 ```bat
 cd webclient 
 ng build
 ```
 
-10. Open the URL "localhost:8888" in browser to view the using the web client. Login using the admin user, to be able to upload motions. The port can be changed in db_server_config.json.
+11. Open the URL "localhost:8888" in browser to view the using the web client. Login using the admin user, to be able to upload motions. The port can be changed in db_server_config.json.
 
-11. To upload and edit animations or upload and edit skeletons you can also use the [motion_preprocessing_tool](https://github.com/eherr/motion_preprocessing_tool).
+12. To upload and edit animations or upload and edit skeletons for retargeting you can also use the [motion_preprocessing_tool](https://github.com/eherr/motion_preprocessing_tool).
 
 ## Publication
 Herrmann, E., Du, H., Antalki, A., Rubinstein, D., Schubotz, R., Sprenger, J., Hosseini, S., Cheema, N., Zinnikus, I., Manns, M., Fischer, K. Slusallek, P., "Motion Data and Model Management for Applied Statistical Motion Synthesis" In: Proceedings of the Conference on Smart Tools and Applications in Computer Graphics. Eurographics Association, 2019.
