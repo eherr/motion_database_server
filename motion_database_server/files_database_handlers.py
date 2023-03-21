@@ -538,14 +538,13 @@ class AddDataTypeTagHandler(BaseDBHandler):
            token = input_data["token"]
            request_user_id = self.project_database.get_user_id_from_token(token) 
            role = self.project_database.get_user_role(request_user_id)
-           
            response_dict = dict()
            response_dict["success"] = False
            if role == "admin":
                tag = input_data["tag"]
                data_type = input_data["data_type"]
                print("add", input_data)
-               new_id = self.app.motion_database.add_tag_type_tag(data_type, tag)
+               new_id = self.app.motion_database.add_data_type_tag(data_type, tag)
                response_dict["id"] = new_id
                response_dict["success"] = True
            response = json.dumps(response_dict)

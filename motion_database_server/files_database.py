@@ -175,7 +175,7 @@ class FilesDatabase:
         return self.tables[self.data_type_taggings_table].get_record_list(["tag"], filter_conditions=filter_conditions)
 
     
-    def add_tag_type_tag(self, data_type, tag):
+    def add_data_type_tag(self, data_type, tag):
         data = dict()
         data["tag"] = tag
         data["dataType"] = data_type
@@ -209,8 +209,6 @@ class FilesDatabase:
         print("missing_meta_files",missing_meta_files)
         print("missing_references",missing_references)
         print("missing_meta_references",missing_meta_references)
-        #self.check_if_files_are_in_table(data_files, meta_data_files)
-        #self.check_if_files_in_table_exist()
 
     def get_file_references(self):
         records = self.tables[self.files_table].db.query_table(self.files_table, ["data", "metaData"], [])
