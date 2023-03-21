@@ -9,30 +9,13 @@ def export_data_types(db_path):
     schema = DBSchema(TABLES)
     motion_db = MotionFileDatabase(schema)
     motion_db.connect_to_database(db_path)
-    data = dict()
-    data["tags"] = [t for t, in motion_db.get_tag_list()]
-    data["data_types"] = dict()
-    for name, in motion_db.get_data_type_list():
-        t_info = motion_db.get_data_type_info(name)
-        t_info["tags"] = [t for t, in motion_db.get_data_type_tag_list(name)]
-        data["data_types"][name] = t_info
-
-    data["data_loaders"] = dict()
-    for idx, t,engine in motion_db.get_data_loader_list():
-         data["data_loaders"][(t + ":" + engine)] = motion_db.get_data_loader_info(t, engine)
+    data = motion_db.data_types_to_dict()
     motion_db.close()
     data_transform_db = DataTransformDatabase(schema)
     data_transform_db.connect_to_database(db_path)
-    data["data_transforms"] = dict()
-    for idx, dt_name, output_t, output_is_collection in data_transform_db.get_data_transform_list():
-        data["data_transforms"][dt_name] = data_transform_db.get_data_transform_info(idx)
-        dt_inputs = []
-        for idx, input_t, is_collection in data_transform_db.get_data_transform_input_list(idx):
-            dt_inputs.append([input_t, is_collection])
-        data["data_transforms"][dt_name]["inputs"] = dt_inputs
+    data["data_transforms"] = data_transform_db.data_transforms_to_dict()
     data_transform_db.close()
     return data
-
 
 
 CONFIG_FILE = "db_server_config.json"

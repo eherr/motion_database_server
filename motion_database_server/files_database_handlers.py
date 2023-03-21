@@ -269,6 +269,27 @@ class GetDataTypeInfoHandler(BaseDBHandler):
 
 
 
+class DataTypeExporHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def get(self):
+        try:
+            data = self.motion_database.data_types_to_dict()
+            response_dict = dict()
+            success = False
+            if data is not None:
+                response_dict.update(data)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
+
 
 FILE_DB_HANDLER_LIST = [(r"/files", GetFileList),
                             (r"/files/add", AddFileHandler),
@@ -281,7 +302,8 @@ FILE_DB_HANDLER_LIST += [(r"/data_types", GetDataTypeList),
                             (r"/data_types/add", AddDataTypeHandler),
                             (r"/data_types/edit", EditDataTypeHandler),
                             (r"/data_types/remove", RemoveDataTypeHandler),
-                            (r"/data_types/info", GetDataTypeInfoHandler)]
+                            (r"/data_types/info", GetDataTypeInfoHandler),
+                             (r"/data_types/export", DataTypeExporHandler)]
 
 class GetDataLoaderList(BaseDBHandler):
     @tornado.gen.coroutine

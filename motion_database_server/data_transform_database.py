@@ -74,3 +74,20 @@ class DataTransformDatabase(DatabaseWrapper):
         input_data = dict()
         input_data["dataType"] = new_name
         self.tables[self.data_transform_inputs_table].update_record_by_condition(conditions, input_data)
+
+    def data_transforms_to_dict(self):
+        data = dict()
+        for idx, dt_name, output_t, output_is_collection in self.get_data_transform_list():
+            data[dt_name] = self.get_data_transform_info(idx)
+            dt_inputs = []
+            for idx, input_t, is_collection in self.get_data_transform_input_list(idx):
+                dt_inputs.append([input_t, is_collection])
+            data[dt_name]["inputs"] = dt_inputs
+        return data
+    
+    def data_transforms_from_dict(self, data):
+        for name in data:
+            dt_idx = self.create_data_transform(data[name])
+            for input_t, is_collection in data[name]["inputs"]:
+                dt_input = {"dataTransform": dt_idx, "dataType": input_t, "isCollection": is_collection}
+                self.create_data_transform_input(dt_input)

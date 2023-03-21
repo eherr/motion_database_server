@@ -10,24 +10,12 @@ def import_data_types(db_path, data):
     schema = DBSchema(TABLES)
     motion_db = MotionFileDatabase(schema)
     motion_db.connect_to_database(db_path)
-    for tag in data["tags"]:
-        motion_db.create_tag(tag)
-    for name in data["data_types"]:
-        motion_db.create_data_type(data["data_types"][name])
-        for tag in data["data_types"][name]["tags"]:
-            #print(name, tag)
-            motion_db.add_data_type_tag(name, tag)
-    for name in data["data_loaders"]:
-        motion_db.create_data_loader(data["data_loaders"][name])
+    motion_db.data_types_from_dict(data)
     motion_db.close()
 
     data_transform_db = DataTransformDatabase(schema)
     data_transform_db.connect_to_database(db_path)
-    for name in data["data_transforms"]:
-        dt_idx = data_transform_db.create_data_transform(data["data_transforms"][name])
-        for input_t, is_collection in data["data_transforms"][name]["inputs"]:
-            dt_input = {"dataTransform": dt_idx, "dataType": input_t, "isCollection": is_collection}
-            data_transform_db.create_data_transform_input(dt_input)
+    data_transform_db.data_transforms_from_dict( data["data_transforms"])
     data_transform_db.close()
     return data
 

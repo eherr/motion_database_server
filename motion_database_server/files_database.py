@@ -223,3 +223,27 @@ class FilesDatabase:
         condition = [("metaData",file_name)]
         file_record = self.tables[self.files_table].get_record_by_condition(condition, ["ID"])
         return file_record is not None
+
+    def data_types_to_dict(self):
+        data = dict()
+        data["tags"] = [t for t, in self.get_tag_list()]
+        data["data_types"] = dict()
+        for name, in self.get_data_type_list():
+            t_info = self.get_data_type_info(name)
+            t_info["tags"] = [t for t, in self.get_data_type_tag_list(name)]
+            data["data_types"][name] = t_info
+
+        data["data_loaders"] = dict()
+        for idx, t,engine in self.get_data_loader_list():
+            data["data_loaders"][(t + ":" + engine)] = self.get_data_loader_info(t, engine)
+        return data
+    
+    def data_types_from_dict(self, data):
+        for tag in data["tags"]:
+            self.create_tag(tag)
+        for name in data["data_types"]:
+            self.create_data_type(data["data_types"][name])
+            for tag in data["data_types"][name]["tags"]:
+                self.add_data_type_tag(name, tag)
+        for name in data["data_loaders"]:
+            self.create_data_loader(data["data_loaders"][name])

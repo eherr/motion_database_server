@@ -514,12 +514,34 @@ class GetDataTransformInputInfoHandler(BaseDBHandler):
             self.finish()
 
 
+
+class DataTransformExportHandler(BaseDBHandler):
+    @tornado.gen.coroutine
+    def get(self):
+        try:
+            data = self.data_transform_service.data_transforms_to_dict()
+            response_dict = dict()
+            success = False
+            if data is not None:
+                response_dict.update(data)
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
+        except Exception as e:
+            print("caught exception in get")
+            self.write("Caught an exception: %s" % e)
+            raise
+        finally:
+            self.finish()
+
 DATA_TRANSFORM_HANDLER_LIST += [
                             (r"/data_transforms/inputs", GetDataTransformInputList),
                             (r"/data_transforms/inputs/add", AddDataTransformInputHandler),
                             (r"/data_transforms/inputs/edit", EditDataTransformInputHandler),
                             (r"/data_transforms/inputs/remove", RemoveDataTransformInputHandler),
                             (r"/data_transforms/inputs/removeall", RemoveAllDataTransformInputHandler),
-                            (r"/data_transforms/inputs/info", GetDataTransformInputInfoHandler)
+                            (r"/data_transforms/inputs/info", GetDataTransformInputInfoHandler),
+                            (r"/data_transforms/export", DataTransformExportHandler)
                             ]
 
