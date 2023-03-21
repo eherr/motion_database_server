@@ -87,11 +87,7 @@ TABLES["files"] = [("name",TEXT_T),
                     ("processed",INT_T)]
 
 TABLES["data_types"] =  [("name",TEXT_T), # need to be unique
-                ("requirements",TEXT_T),
-                ("isModel",INT_T),
-                ("isTimeSeries",INT_T),
-                ("isSkeletonMotion",INT_T),
-                ("isProcessed",INT_T)
+                ("requirements",TEXT_T)
                 ]
 
 TABLES["data_loaders"] = [("dataType",TEXT_T),
