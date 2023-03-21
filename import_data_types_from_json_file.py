@@ -15,7 +15,7 @@ def import_data_types(db_path, data):
 
     data_transform_db = DataTransformDatabase(schema)
     data_transform_db.connect_to_database(db_path)
-    data_transform_db.data_transforms_from_dict( data["data_transforms"])
+    data_transform_db.data_transforms_from_dict(data["data_transforms"])
     data_transform_db.close()
     return data
 
