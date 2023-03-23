@@ -96,7 +96,7 @@ class BaseDBHandler(BaseHandler):
             return False
         request_user_id = self.project_database.get_user_id_from_token(token)
         role = self.project_database.get_user_role(request_user_id)
-        if role == "admin":
+        if role == USER_ROLE_ADMIN:
             return True
         owner_id = self.motion_database.get_owner_of_file(file_id)
         if request_user_id == owner_id:
@@ -118,7 +118,7 @@ class BaseDBHandler(BaseHandler):
             bool: has access
         """
         request_user_id = self.project_database.get_user_id_from_token(token)
-        role = self.motion_database.get_user_role(request_user_id)
+        role = self.project_database.get_user_role(request_user_id)
         if role == USER_ROLE_ADMIN:
             return True
         owner_id = self.motion_database.get_owner_of_collection(collection_id)
