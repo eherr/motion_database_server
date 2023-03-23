@@ -67,7 +67,6 @@ class ReplaceGraphHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
-            result_id = None
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             has_access = self.project_database.check_rights(input_data)

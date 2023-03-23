@@ -4,18 +4,24 @@ import base64
 import tornado.web
 from motion_database_server.base_handler import BaseDBHandler
 
+
 class FileDBHandler(BaseDBHandler):
     def has_access(self, data):
-        f_id = data.get("file_id", None)
-        if f_id is None:
+        """Check if user is admin, owner of file or member of project that owns the file
+
+        Args:
+            data (dict): body dictionary with file_id and token
+
+        Returns:
+            bool: has access
+        """
+        file_id = data.get("file_id", None)
+        if file_id is None:
             return False
         token = data.get("token", None)
         if token is None:
             return False
-        owner_id = self.motion_database.get_owner_of_file(f_id)
-        request_user_id = self.project_database.get_user_id_from_token(token)
-        role = self.project_database.get_user_role(request_user_id)
-        return request_user_id == owner_id or role == "admin"
+        return self.has_access_to_file(file_id, token)
 
 class GetFileList(FileDBHandler):
     @tornado.gen.coroutine
@@ -132,7 +138,7 @@ class ReplaceFileHandler(FileDBHandler):
                     input_data["data"] = base64.b64decode(input_data["data"])
                 if "metaData" in input_data:
                     input_data["metaData"] = base64.b64decode(input_data["metaData"])
-                self.motion_database.replace_file(m_id, input_data)
+                self.motion_database.edit_file(m_id, input_data)
             response_dict["success"] = success
             response = json.dumps(response_dict)
             self.write(response)
@@ -591,6 +597,7 @@ class AddDataTypeTagHandler(BaseDBHandler):
                tag = input_data["tag"]
                data_type = input_data["data_type"]
                print("add", input_data)
+               print("tag", tag, type(tag))
                new_id = self.app.motion_database.add_data_type_tag(data_type, tag)
                response_dict["id"] = new_id
                response_dict["success"] = True

@@ -26,7 +26,6 @@ import bz2
 import tornado.web
 from motion_database_server.base_handler import BaseDBHandler
 import base64
-USER_ROLE_ADMIN = "admin"
 
 class ModelDBHandler(BaseDBHandler):
     def has_access(self, data):
@@ -36,10 +35,7 @@ class ModelDBHandler(BaseDBHandler):
         token = data.get("token", None)
         if token is None:
             return False
-        owner_id = self.motion_database.get_owner_of_file(m_id)
-        request_user_id = self.project_database.get_user_id_from_token(token)
-        role = self.project_database.get_user_role(request_user_id)
-        return request_user_id == owner_id or role == USER_ROLE_ADMIN
+        return self.has_access_to_file(m_id, token)
 
 class GetModelList(ModelDBHandler):
     @tornado.gen.coroutine
@@ -73,7 +69,10 @@ class AddModelHandler(ModelDBHandler):
             input_data = json.loads(input_str)
             response_dict = dict()
             success = False
-            if "collection" in input_data and "data" in input_data and self.project_database.check_rights(input_data):
+            
+            collection = input_data.get("collection", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_collection(collection, token) and "data" in input_data:
                 input_data["data"] = base64.b64decode(input_data["data"])
                 if "format" in input_data:
                     input_data["dataType"] = input_data["format"]
@@ -102,7 +101,9 @@ class RemoveModelHandler(ModelDBHandler):
             input_data = json.loads(input_str)
             success = False
             response_dict = dict()
-            if self.has_access(input_data):
+            model_id = input_data.get("model_id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_file(model_id, token):
                 m_id = input_data["model_id"]
                 print("Error: has no access rights")
                 self.motion_database.delete_file_by_id(m_id)
@@ -130,8 +131,6 @@ class DownloadModelHandler(ModelDBHandler):
     def post(self):
         try:
             input_str = self.request.body.decode("utf-8")
-            print(input_str)
-
             input_data = json.loads(input_str)
             data = self.motion_database.get_file_by_id(input_data["model_id"])
             if data is not None:
@@ -155,14 +154,16 @@ class ReplaceModelHandler(ModelDBHandler):
             input_data = json.loads(input_str)
             response_dict = dict()
             success = False
-            if self.has_access(input_data):
+            model_id = input_data.get("model_id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_file(model_id, token):
                 success = True
                 m_id = input_data["model_id"]
                 if "data" in input_data:
                     input_data["data"] = base64.b64decode(input_data["data"])
                 if "metaData" in input_data:
                     input_data["metaData"] = base64.b64decode(input_data["metaData"])
-                self.motion_database.replace_file(m_id, input_data)
+                self.motion_database.edit_file(m_id, input_data)
             response_dict["success"] = success
             response = json.dumps(response_dict)
             self.write(response)

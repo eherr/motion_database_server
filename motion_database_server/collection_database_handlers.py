@@ -25,19 +25,6 @@ import json
 import tornado.web
 from motion_database_server.base_handler import BaseDBHandler
 
-class MotionDBHandler(BaseDBHandler):
-    def has_access_to_collection(self, data):
-        collection_id = data.get("id", None)
-        if collection_id is None:
-            return False
-        token = data.get("token", None)
-        if token is None:
-            return False
-        owner_id = self.motion_database.get_owner_of_collection(collection_id)
-        request_user_id = self.project_database.get_user_id_from_token(token)
-        role = self.motion_database.get_user_role(request_user_id)
-        return request_user_id == owner_id or role == USER_ROLE_ADMIN
-
 
 
 class NewCollectionHandler(BaseDBHandler):
@@ -47,23 +34,21 @@ class NewCollectionHandler(BaseDBHandler):
             success = False
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            if "token" in input_data and "name" in input_data and "type" in input_data and "parent_id" in input_data:
-                token = input_data["token"]
+            parent_collection = input_data.get("parent_id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_collection(parent_collection, token):
                 request_user_id = self.project_database.get_user_id_from_token(token)
                 response_dict = dict()
-                if request_user_id >= 0:
-                    name = input_data["name"]
-                    collection_type = input_data["type"]
-                    parent_id = input_data["parent_id"]
-                    owner = request_user_id
-                    if "owner" in input_data:
-                        owner = input_data["owner"]
-                    response_dict["id"] = self.motion_database.add_new_collection_by_id(name, collection_type, parent_id, owner)
-                    success = True
-                else:
-                    print("Error: no access rights")
+                name = input_data["name"]
+                collection_type = input_data["type"]
+                parent_id = input_data["parent_id"]
+                owner = request_user_id
+                if "owner" in input_data:
+                    owner = input_data["owner"]
+                response_dict["id"] = self.motion_database.add_new_collection_by_id(name, collection_type, parent_id, owner)
+                success = True
             else:
-                print("Error: not all parameters were provided to create a collection entry")
+                print("Error: no access rights")
             
             response_dict["success"] = success
             response = json.dumps(response_dict)
@@ -83,7 +68,7 @@ class GetCollectionListHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             owner, public = self.project_database.get_user_access_rights(input_data)
-            col_str = "[]"
+            cols_str = "[]"
             if "parent_id" in input_data:
                 parent_id = input_data["parent_id"]
                 cols = self.motion_database.get_collection_list_by_id(parent_id, owner, public)
@@ -142,17 +127,18 @@ class GetCollectionHandler(BaseDBHandler):
             self.finish()
 
 
-class ReplaceCollectionHandler(MotionDBHandler):
+class EditCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
             success = False
             input_str = self.request.body.decode("utf-8")
-            print(input_str)
             input_data = json.loads(input_str)
-            if self.has_access_to_collection(input_data):
+            id = input_data.get("id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_collection(id, token):
                 collection_id = input_data["id"]
-                self.motion_database.replace_collection(input_data, collection_id)
+                self.motion_database.edit_collection(input_data, collection_id)
                 success = True
             else:
                 print("Error: has no access rights")
@@ -171,7 +157,7 @@ class ReplaceCollectionHandler(MotionDBHandler):
 
 
 
-class RemoveCollectionHandler(MotionDBHandler):
+class RemoveCollectionHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
@@ -179,7 +165,9 @@ class RemoveCollectionHandler(MotionDBHandler):
             input_str = self.request.body.decode("utf-8")
             print(input_str)
             input_data = json.loads(input_str)
-            if self.has_access_to_collection(input_data):
+            id = input_data.get("id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_collection(id, token):
                 self.motion_database.remove_collection_by_id(input_data["id"])
                 success = True
             else:
@@ -224,7 +212,7 @@ class GetCollectionsByNameHandler(BaseDBHandler):
 
 LEGACY_COLLECTION_DB_HANDLER_LIST = [(r"/get_collection_list", GetCollectionListHandler),
                             (r"/get_collection", GetCollectionHandler),
-                            (r"/replace_collection", ReplaceCollectionHandler),
+                            (r"/replace_collection", EditCollectionHandler),
                             (r"/create_new_collection", NewCollectionHandler),
                             (r"/remove_collection", RemoveCollectionHandler),
                             (r"/get_collections_by_name", GetCollectionsByNameHandler),
@@ -234,7 +222,7 @@ LEGACY_COLLECTION_DB_HANDLER_LIST = [(r"/get_collection_list", GetCollectionList
 COLLECTION_DB_HANDLER_LIST = LEGACY_COLLECTION_DB_HANDLER_LIST+ [
                             (r"/collections", GetCollectionListHandler),
                             (r"/collections/info", GetCollectionHandler),
-                            (r"/collections/replace", ReplaceCollectionHandler),
+                            (r"/collections/replace", EditCollectionHandler),
                             (r"/collections/add", NewCollectionHandler),
                             (r"/collections/remove", RemoveCollectionHandler),
                             (r"/collections/tree", GetCollectionTreeHandler)]

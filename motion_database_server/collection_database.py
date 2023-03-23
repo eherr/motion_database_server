@@ -77,6 +77,16 @@ class CollectionDatabase:
     def get_collection_by_id(self, collection_id):
         return self.tables[self.collections_table].get_record_by_id(collection_id,["ID","name","type", "parent"])
 
-    def replace_collection(self, input_data, collection_id):
+    def edit_collection(self, input_data, collection_id):
         self.tables[self.collections_table].update_record(collection_id, input_data)
     
+    def get_root_of_collection_tree(self, collection_id):
+        parent = collection_id
+        while parent > 0:
+            record = self.tables[self.collections_table].get_record_by_id(collection_id,["parent"])
+            collection_id = parent
+            if record is not None:
+                parent = record[0]
+            else:
+                parent = -1
+        return collection_id

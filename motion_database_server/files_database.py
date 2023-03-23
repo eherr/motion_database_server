@@ -52,10 +52,10 @@ class FilesDatabase:
     def delete_file_by_id(self, f_id):
         return self.tables[self.files_table].delete_record_by_id(f_id)
     
-    def get_file_info(self, columns, file_ids):
+    def get_file_info(self, columns, file_id):
         if "ID" not in columns:
             columns.append("ID")
-        records = self.query_table(self.files_table, columns, [("ID",file_ids)])
+        records = self.query_table(self.files_table, columns, [("ID",file_id)])
         result = dict()
         for r in records:
             row = dict()
@@ -247,4 +247,3 @@ class FilesDatabase:
                 self.add_data_type_tag(name, tag)
         for name in data["data_loaders"]:
             self.create_data_loader(data["data_loaders"][name])
-            

@@ -30,20 +30,15 @@ from anim_utils.animation_data import MotionVector
 from motion_database_server.base_handler import BaseDBHandler
 
 
-USER_ROLE_ADMIN = "admin"
-
 class MotionDBHandler(BaseDBHandler):
-    def has_access_to_collection(self, data):
-        collection_id = data.get("id", None)
+    def has_access(self, data):
+        collection_id = data.get("collection", None)
         if collection_id is None:
             return False
         token = data.get("token", None)
         if token is None:
             return False
-        owner_id = self.motion_database.get_owner_of_collection(collection_id)
-        request_user_id = self.project_database.get_user_id_from_token(token)
-        role = self.motion_database.get_user_role(request_user_id)
-        return request_user_id == owner_id or role == USER_ROLE_ADMIN
+        return self.has_access_to_collection(collection_id, token)
 
 class GetMotionHandler(BaseDBHandler):
     def post(self):
@@ -147,8 +142,7 @@ class UploadMotionHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            has_access = self.project_database.check_rights(input_data)
-            if not has_access:
+            if self.has_access(input_data):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
@@ -202,8 +196,7 @@ class UploadBVHClipHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             print("call upload from bvh")
             input_data = json.loads(input_str)
-            has_access = self.project_database.check_rights(input_data)
-            if not has_access:
+            if self.has_access(input_data):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
@@ -233,8 +226,9 @@ class ReplaceMotionHandler(BaseDBHandler):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            has_access = self.project_database.check_rights(input_data)
-            if not has_access:
+            motion_id = input_data.get("motion_id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_file(motion_id, token):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
@@ -262,7 +256,7 @@ class ReplaceMotionHandler(BaseDBHandler):
                 motion_data = bson.dumps(input_data["data"])
                 motion_data = bz2.compress(motion_data)
             
-            result_str = self.motion_database.replace_motion(input_data["motion_id"],
+            result_str = self.motion_database.replace_motion(motion_id,
                                                                 collection,
                                                                 skeleton_name,
                                                                 name,
@@ -290,18 +284,15 @@ class DeleteMotionHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
     
             input_data = json.loads(input_str)
-            if "clip_id" in input_data and "token" in input_data:
-                m_id = input_data["clip_id"]
-                token = input_data["token"]
-                owner_id = self.motion_database.get_owner_of_file(m_id)
-                request_user_id = self.project_database.get_user_id_from_token(token)
-                role = self.project_database.get_user_role(request_user_id)
-                if request_user_id != owner_id and role != USER_ROLE_ADMIN:
-                    print("Error: has no access rights")
-                    self.write("Done")
-                    return
-                print("delete",m_id)
-                self.motion_database.delete_file_by_id(m_id)
+            clip_id = input_data.get("clip_id", None)
+            token = input_data.get("token", None)
+            if self.has_access_to_file(clip_id, token):
+                print("delete",clip_id)
+                self.motion_database.delete_file_by_id(clip_id)
+            else:
+                print("Error: has no access rights")
+                self.write("Done")
+                return
             self.write("Done")
 
         except Exception as e:

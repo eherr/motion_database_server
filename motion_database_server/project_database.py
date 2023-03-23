@@ -104,6 +104,14 @@ class ProjectDatabase(UserDatabase, CollectionDatabase):
             return -1
         else:
             return owner
+        
+    def get_project_by_collection(self, collection_id):
+        filter_conditions = [("collection", collection_id)]
+        r = self.query_table(self.projects_table, ["ID"], filter_conditions)
+        if len(r) > 0:
+            return r[0][0]
+        else:
+            return -1
 
     def is_user_in_project(self, project_id, user_id):
         success = False
