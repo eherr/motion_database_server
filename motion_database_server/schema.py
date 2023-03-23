@@ -25,37 +25,13 @@ INT_T = "INTERGER"
 BLOB_T = "BLOB"
 TEXT_T = "TEXT"
 
+
 TABLES = dict()
 TABLES["collections"] = [("name",TEXT_T),
-                    ("type",TEXT_T), 
-                    ("owner",INT_T), 
-                    ("parent",INT_T)]
-TABLES["skeletons"] = [("name",TEXT_T),
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T),
-                    ("owner",INT_T)]
-TABLES["motion_clips"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeletonType",INT_T), 
-                    ("quaternionFrames",TEXT_T), 
-                    ("metaInfo",TEXT_T)]
-TABLES["models"] = [("name",TEXT_T),
-                    ("collection",INT_T), 
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T), 
-                    ("metaData",BLOB_T)]
-TABLES["graphs"] = [("name",TEXT_T),
-                    ("skeleton",INT_T), 
-                    ("data",BLOB_T)]
-
-
-COLLECT_TABLE = [("name",TEXT_T),
                     ("type",TEXT_T), 
                     ("owner",TEXT_T), 
                     ("parent",INT_T), 
                     ("public",INT_T)]
-TABLES = dict()
-TABLES["collections"] = COLLECT_TABLE
 TABLES["skeletons"] = [("name",TEXT_T),
                     ("data",TEXT_T), 
                     ("metaData",TEXT_T),
@@ -82,9 +58,7 @@ TABLES["files"] = [("name",TEXT_T),
                     ("dataType",TEXT_T),
                     ("numFrames",INT_T),
                     ("comment",TEXT_T),
-                    ("subject",TEXT_T),
-                    ("source",TEXT_T),
-                    ("processed",INT_T)]
+                    ("subject",TEXT_T)]
 
 TABLES["data_types"] =  [("name",TEXT_T), # need to be unique
                 ("requirements",TEXT_T)
@@ -150,6 +124,7 @@ class DBSchema:
         con = sqlite3.connect(path)
         for t_name in self.tables:
             self.create_table(con, t_name, self.tables[t_name])
+        
         con.close()
 
     def create_table(self, con, table_name, columns):
