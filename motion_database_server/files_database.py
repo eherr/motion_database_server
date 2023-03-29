@@ -46,7 +46,7 @@ class FilesDatabase:
             print("Error in get file data",f_id)
         return data
 
-    def replace_file(self, f_id, data):
+    def edit_file(self, f_id, data):
         self.tables[self.files_table].update_record(f_id, data)
 
     def delete_file_by_id(self, f_id):
