@@ -6,10 +6,12 @@ import numpy as np
 
 class ModelGraphDatabase(): 
     graph_table = "model_graphs"
-    def get_graph_list(self, skeleton=""):
+    def get_graph_list(self, skeleton=None, project_id=None):
         filter_conditions = []
-        if skeleton != "":
+        if skeleton is not None and skeleton != "":
             filter_conditions+=[("skeleton", skeleton)]
+        if project_id is not None:
+            filter_conditions+=[("project", project_id)]
         return self.tables[self.graph_table].get_record_list(["ID","name"], filter_conditions)
     
     def add_new_graph(self, name, skeleton, graph_data):

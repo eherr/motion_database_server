@@ -17,7 +17,10 @@ class GetGraphListHandler(BaseDBHandler):
             skeleton = None
             if "skeleton" in input_data:
                 skeleton = input_data["skeleton"]
-            result = self.motion_database.get_graph_list(skeleton)
+            project_id = None
+            if "project_id" in input_data:
+                project_id = input_data["project_id"]
+            result = self.motion_database.get_graph_list(skeleton, project_id)
             if result is not None:
                 result_str = json.dumps(result)
                 self.write(result_str)
@@ -149,3 +152,10 @@ MODEL_GRAPH_HANDLER_LIST = [ (r"/get_graph_list", GetGraphListHandler),
                         (r"/replace_graph", ReplaceGraphHandler),
                         (r"/download_graph", DownloadGraphHandler),
                         (r"/remove_graph", RemoveGraphHandler),]
+
+
+MODEL_GRAPH_HANDLER_LIST += [ (r"/model_graphs", GetGraphListHandler),
+                        (r"/model_graphs/add", UploadGraphHandler),
+                        (r"/model_graphs/edit", ReplaceGraphHandler),
+                        (r"/model_graphs/download", DownloadGraphHandler),
+                        (r"/model_graphs/remove", RemoveGraphHandler),]
