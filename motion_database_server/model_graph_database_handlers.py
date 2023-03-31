@@ -38,27 +38,22 @@ class UploadGraphHandler(BaseDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
-            result_id = None
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             has_access = self.project_database.check_rights(input_data)
-            if not has_access:
-                print("Error: has no access rights")
-                self.write("Done")
-                return
-            if "name" in input_data and "skeleton" in input_data and "data" in input_data and "project" in input_data:
+            response_dict = dict()
+            success = False
+            if has_access and "name" in input_data and "skeleton" in input_data and "data" in input_data and "project" in input_data:
                 name = input_data["name"]
                 skeleton = input_data["skeleton"]
                 project = input_data["project"]
                 data = bson.dumps(input_data["data"])
                 data = bz2.compress(data)
                 result_id = self.motion_database.add_new_graph(name, project, skeleton, data)
-            if result_id is not None:
-                result_data = {"id": result_id}
-                result_str = json.dumps(result_data)
-                self.write(result_str)
-            else:
-                self.write("Error")
+                response_dict["id"] = result_id
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
 
         except Exception as e:
             print("caught exception in get")
@@ -74,6 +69,8 @@ class ReplaceGraphHandler(BaseDBHandler):
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
             has_access = self.project_database.check_rights(input_data)
+            response_dict = dict()
+            success = False
             if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")
@@ -83,7 +80,10 @@ class ReplaceGraphHandler(BaseDBHandler):
                 data = bson.dumps(input_data["data"])
                 input_data["data"] = bz2.compress(data)
                 self.motion_database.replace_graph(graph_id, input_data)
-            self.write("Done")
+                success = True
+            response_dict["success"] = success
+            response = json.dumps(response_dict)
+            self.write(response)
 
         except Exception as e:
             print("caught exception in get")
@@ -99,16 +99,15 @@ class DownloadGraphHandler(BaseDBHandler):
     def post(self):
         try:
             input_str = self.request.body.decode("utf-8")
-            result = None
             input_data = json.loads(input_str)
+            response_dict = dict()
             if "id" in input_data:
                 graph_id = input_data["id"]
                 result = self.motion_database.get_graph_by_id(graph_id)
-            if result is not None:
-                result = json.dumps(result)
-                self.write(result)
-            else:
-                self.write("Not found")
+                if result is not None:
+                    response_dict = result
+            response = json.dumps(response_dict)
+            self.write(response)
 
         except Exception as e:
             print("caught exception in get")
@@ -125,9 +124,10 @@ class RemoveGraphHandler(BaseDBHandler):
         try:
             
            input_str = self.request.body.decode("utf-8")
-           result = None
            input_data = json.loads(input_str)
            has_access = self.project_database.check_rights(input_data)
+           response_dict = dict()
+           success = False
            if not has_access:
                 print("Error: has no access rights")
                 self.write("Done")
@@ -135,11 +135,11 @@ class RemoveGraphHandler(BaseDBHandler):
            if "id" in input_data:
                graph_id = input_data["id"]
                result = self.motion_database.remove_graph_by_id(graph_id)
-           if result is not None:
-               result_str = json.dumps(result)
-               self.write(result_str)
-           else:
-               self.write("Done")
+               if result is not None:
+                   success = True
+           response_dict["success"] = success
+           response = json.dumps(response_dict)
+           self.write(response)
         except Exception as e:
             print("caught exception in get")
             self.write("Caught an exception: %s" % e)

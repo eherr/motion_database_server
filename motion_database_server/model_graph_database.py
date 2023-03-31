@@ -14,9 +14,10 @@ class ModelGraphDatabase():
             filter_conditions+=[("project", project_id)]
         return self.tables[self.graph_table].get_record_list(["ID","name"], filter_conditions)
     
-    def add_new_graph(self, name, skeleton, graph_data):
+    def add_new_graph(self, name, project_id, skeleton, graph_data):
         record_data = dict()
         record_data["name"] = name
+        record_data["project"] = project_id
         record_data["skeleton"] = skeleton
         record_data["data"] = graph_data
         return self.tables[self.graph_table].create_record(record_data)
