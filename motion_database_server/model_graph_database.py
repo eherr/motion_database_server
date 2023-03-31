@@ -22,9 +22,6 @@ class ModelGraphDatabase():
         return self.tables[self.graph_table].create_record(record_data)
 
     def replace_graph(self, graph_id, input_data):
-        if "data" in input_data:
-            graph_data = bz2.compress(bson.dumps(input_data["data"]))
-            input_data["data"] = graph_data
         self.tables[self.graph_table].update_record(graph_id, input_data)
 
     def get_graph_by_id(self, graph_id):

@@ -46,12 +46,13 @@ class UploadGraphHandler(BaseDBHandler):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
-            if "name" in input_data and "skeleton" in input_data and "data" in input_data:
+            if "name" in input_data and "skeleton" in input_data and "data" in input_data and "project" in input_data:
                 name = input_data["name"]
                 skeleton = input_data["skeleton"]
+                project = input_data["project"]
                 data = bson.dumps(input_data["data"])
                 data = bz2.compress(data)
-                result_id = self.motion_database.add_new_graph(name, skeleton, data)
+                result_id = self.motion_database.add_new_graph(name, project, skeleton, data)
             if result_id is not None:
                 result_data = {"id": result_id}
                 result_str = json.dumps(result_data)
@@ -77,9 +78,10 @@ class ReplaceGraphHandler(BaseDBHandler):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
-            if "id" in input_data:
+            if "id" in input_data and "data" in input_data:
                 graph_id = input_data["id"]
-                data = bz2.compress(data)
+                data = bson.dumps(input_data["data"])
+                input_data["data"] = bz2.compress(data)
                 self.motion_database.replace_graph(graph_id, input_data)
             self.write("Done")
 
