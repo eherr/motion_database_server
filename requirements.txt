@@ -3,7 +3,7 @@ fastdtw==0.3.2
 matplotlib>=2.0.2
 requests>=2.18.4
 scipy>=1.4.1
-tornado==4.5.2
+tornado==6.3.2
 httplib2==0.19.0
 scikit_learn
 pandas==0.23.3
