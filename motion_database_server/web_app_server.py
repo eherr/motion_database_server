@@ -92,10 +92,8 @@ class WebAppServer(tornado.web.Application):
         self.request_handler_list += service_context.request_handler_list
 
     def start(self):
-        settings = dict(template_path=os.path.join(os.path.dirname(__file__), "..", "templates"))
-        
         self.request_handler_list += [(r"/(.+)", CustomStaticFileHander, {"path": self.root_path})]  # NEEDS TO BE AT THE END
-        tornado.web.Application.__init__(self, self.request_handler_list, "", None, **settings)
+        tornado.web.Application.__init__(self, self.request_handler_list, "", None, template_path=self.root_path)
 
         print("Start Tornado REST interface on port", self.port, self.ssl_options)
         for k in self.service_contexts:
