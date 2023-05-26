@@ -40,26 +40,15 @@ class IndexHandler(BaseHandler):
     def __init__(self, application, request, **kwargs):
         tornado.web.RequestHandler.__init__(self, application, request, **kwargs)
         self.app = application
-        self.enable_editing = False
-        self.path_prefix = "./"
-        if self.app.activate_port_forwarding:
-            self.path_prefix = str(self.app.port)
 
     def get(self):
-        self.render("index.html", path_prefix=self.path_prefix, 
-                    enable_editing=self.enable_editing,
-                    server_port=str(self.app.port),
-                    activate_port_forwarding=self.app.activate_port_forwarding,
-                    enable_download=self.app.enable_download
-                    )
+        self.render("index.html")
 
 
 class GetMetaHandler(BaseHandler):
     @tornado.gen.coroutine
     def post(self):
-        result_object = dict(server_port=str(self.app.port),
-                             activate_port_forwarding=self.app.activate_port_forwarding,
-                             enable_download=self.app.enable_download,
+        result_object = dict(enable_download=self.app.enable_download,
                              enable_data_transforms=self.app.enable_data_transforms)
 
         self.write(json.dumps(result_object))
@@ -71,8 +60,8 @@ class WebAppServer(tornado.web.Application):
     def __init__(self, **kwargs):
         self.port = kwargs.get("port", 8888)
         self.root_path = kwargs.get("root_path", r"./public")
+        print(self.root_path)
         self.server_secret = kwargs.get("server_secret", None)
-        self.activate_port_forwarding = kwargs.get("activate_port_forwarding", False)
         self.enable_download = kwargs.get("enable_download", False)
         self.ssl_options = kwargs.get("ssl_options", None)
         self.activate_user_authentification = kwargs.get("activate_user_authentification", True)
@@ -98,7 +87,6 @@ class WebAppServer(tornado.web.Application):
         print("Start Tornado REST interface on port", self.port, self.ssl_options)
         for k in self.service_contexts:
             print("starting service", k)
-        print("activate_port_forwarding", self.activate_port_forwarding)
         #asyncio.set_event_loop(asyncio.new_event_loop())
         try:
             if self.ssl_options is not None:
