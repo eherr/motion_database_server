@@ -1,6 +1,7 @@
 {
     "db_path" : "motion.db",
     "root_path" : "webclient/dist/dbapp-angular",
+    "data_dir" : "data",
     "port": 8888,
     "enable_editing" : true,
     "activate_port_forwarding": false,
