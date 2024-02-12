@@ -136,13 +136,13 @@ class DownloadAnnotationHandler(BaseDBHandler):
             self.finish()
 
 
-class UploadMotionHandler(BaseDBHandler):
+class UploadMotionHandler(MotionDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
             input_str = self.request.body.decode("utf-8")
             input_data = json.loads(input_str)
-            if self.has_access(input_data):
+            if not self.has_access(input_data):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
@@ -189,14 +189,14 @@ class UploadMotionHandler(BaseDBHandler):
         finally:
             self.finish()
 
-class UploadBVHClipHandler(BaseDBHandler):
+class UploadBVHClipHandler(MotionDBHandler):
     @tornado.gen.coroutine
     def post(self):
         try:
             input_str = self.request.body.decode("utf-8")
             print("call upload from bvh")
             input_data = json.loads(input_str)
-            if self.has_access(input_data):
+            if not self.has_access(input_data):
                 print("Error: has no access rights")
                 self.write("Done")
                 return
@@ -228,7 +228,7 @@ class ReplaceMotionHandler(BaseDBHandler):
             input_data = json.loads(input_str)
             motion_id = input_data.get("motion_id", None)
             token = input_data.get("token", None)
-            if self.has_access_to_file(motion_id, token):
+            if not self.has_access_to_file(motion_id, token):
                 print("Error: has no access rights")
                 self.write("Done")
                 return

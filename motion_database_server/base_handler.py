@@ -133,7 +133,7 @@ class JSONHandler(BaseDBHandler):
         try:
            input_str = self.request.body.decode("utf-8")
            input_dict = json.loads(input_str)
-           response_dict = self.method(self, input_dict)
+           response_dict = self.handle_json_request(self, input_dict)
            response = json.dumps(response_dict)
            self.write(response)
         except Exception as e:

@@ -153,16 +153,20 @@ class MotionFileDatabase(DatabaseWrapper, CollectionDatabase, FileStorage, Files
         filter_conditions =[("collection",str(collection))]
         if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
-        if processed is not None:
-            filter_conditions+=[("processed", processed)]
+        if processed is not None and processed:
+            filter_conditions+=[("dataType", "aligned_motion")]
+        else:
+            filter_conditions+=[("dataType", "motion")]
         return self.tables[self.files_table].get_record_list( ["ID","name"], filter_conditions)
 
     def get_motion_list_by_name(self, name, skeleton=None, processed=None, exact_match=False):
         filter_conditions =[]
         if skeleton is not None:
             filter_conditions+=[("skeleton", skeleton)]
-        if processed is not None:
-            filter_conditions+=[("processed", processed)]
+        if processed is not None and processed:
+            filter_conditions+=[("dataType", "aligned_motion")]
+        else:
+            filter_conditions+=[("dataType", "motion")]
         return self.tables[self.files_table].search_records_by_name(name, ["ID","name"], exact_match, filter_conditions)
 
    
